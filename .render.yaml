@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: solana-arb-site
-    env: node
-    buildCommand: npm install
-    startCommand: npm run dev
