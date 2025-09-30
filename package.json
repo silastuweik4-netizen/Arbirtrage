@@ -1,10 +1,10 @@
 {
   "name": "mango-liquidation-tracker",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js"
   },
   "dependencies": {
     "express": "^4.19.2",
