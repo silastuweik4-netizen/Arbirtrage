@@ -1,13 +1,14 @@
 {
   "name": "mango-liquidation-tracker",
   "version": "1.0.0",
+  "description": "A simple Solana Mango Markets liquidation tracker",
+  "main": "src/index.js",
   "type": "module",
-  "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node src/index.js"
   },
   "dependencies": {
-    "axios": "^1.6.0",
-    "node-telegram-bot-api": "^0.61.0"
+    "node-fetch": "^3.3.2",
+    "ws": "^8.13.0"
   }
 }
