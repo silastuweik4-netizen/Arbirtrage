@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: liquidation-tracker
-    env: python
-    buildCommand: ""
-    startCommand: python main.py
-    plan: free
