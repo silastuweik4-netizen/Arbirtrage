@@ -1,23 +1,23 @@
 import express from "express";
+import WebSocket from "ws";
 import fetch from "node-fetch";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 // === Telegram Config ===
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; // set this in Render Env vars
-const CHAT_ID = process.env.CHAT_ID; // your Telegram user/group ID
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; // set in Render Env
+const CHAT_ID = process.env.CHAT_ID;               // your Telegram user/group ID
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
-// 👋 Simple healthcheck
+// 👋 Simple healthcheck for Render
 app.get("/", (req, res) => {
-  res.send("🚀 Mango liquidation tracker is running...");
+  res.send("🚀 Mango WebSocket liquidation tracker is running...");
 });
 
-// Start Express server
 app.listen(PORT, () => {
   console.log(`🌐 Server listening on port ${PORT}`);
-  startTracker();
+  startWebSocket();
 });
 
 // === Helper: Send Telegram Alerts ===
@@ -37,43 +37,53 @@ async function sendTelegramMessage(message) {
   }
 }
 
-// === Mango Liquidation Tracker Logic ===
-async function startTracker() {
-  console.log("🚀 Mango liquidation tracker started...");
+// === WebSocket connection to Mango ===
+function startWebSocket() {
+  const ws = new WebSocket("wss://api.mango.markets/v4/ws");
 
-  const endpoint = "https://api.mngo.cloud/liquidations"; // example endpoint (replace with real)
+  ws.on("open", () => {
+    console.log("🔌 Connected to Mango WebSocket");
 
-  while (true) {
+    // subscribe to liquidation events
+    ws.send(
+      JSON.stringify({
+        op: "subscribe",
+        channel: "liquidations"
+      })
+    );
+  });
+
+  ws.on("message", async (msg) => {
     try {
-      const res = await fetch(endpoint);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = JSON.parse(msg.toString());
+      if (data?.channel === "liquidations" && data?.data) {
+        console.log("⚡ Liquidation Event:", data.data);
 
-      if (data && data.length > 0) {
-        console.log("⚡ Liquidations detected:", data);
+        const liq = data.data;
 
-        for (const liq of data) {
-          const msg = `
+        const message = `
 ⚡ *Mango Liquidation Alert* ⚡
 
 - Account: \`${liq.account || "unknown"}\`
 - Asset: ${liq.asset || "N/A"}
 - Amount: ${liq.amount || "N/A"}
 - Price: ${liq.price || "N/A"}
-- Timestamp: ${new Date().toISOString()}
-          `;
-          await sendTelegramMessage(msg);
-        }
-      } else {
-        console.log("✅ No liquidations right now...");
+- Time: ${new Date().toISOString()}
+        `;
+
+        await sendTelegramMessage(message);
       }
     } catch (err) {
-      console.error("❌ Error fetching liquidations:", err.message);
+      console.error("❌ Error processing message:", err.message);
     }
+  });
 
-    // poll every 10 seconds
-    await new Promise((resolve) => setTimeout(resolve, 10000));
-  }
-}
+  ws.on("close", () => {
+    console.log("❌ WebSocket closed, retrying in 5s...");
+    setTimeout(startWebSocket, 5000);
+  });
+
+  ws.on("error", (err) => {
+    console.error("❌ WebSocket error:", err.message);
+  });
+        }
