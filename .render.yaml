@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: solana-arb-site
-    env: node
-    rootDir: .
-    buildCommand: npm install && npm run build
-    startCommand: npm run preview -- --port $PORT --host
