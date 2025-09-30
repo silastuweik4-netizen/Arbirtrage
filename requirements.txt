@@ -1,1 +1,3 @@
 requests==2.31.0
+python-telegram-bot==13.15
+flask==2.3.2   # if we need webhook support later
