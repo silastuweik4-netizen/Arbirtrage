@@ -11,8 +11,8 @@ import { BN } from 'bn.js';
 import fetch from 'node-fetch';
 
 // --------------- IDLs -----------------------------
-import marginfiIdl from './marginfi-v2.json' assert { type: 'json' };
-import kaminoIdl from './klend.json' assert { type: 'json' };
+import marginfiIdl from './marginfi-v2.json';
+import kaminoIdl from './klend.json';
 // --------------------------------------------------
 
 const app = express();
