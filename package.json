@@ -1,22 +1,27 @@
 {
   "name": "solana-lending-liquidation-tracker",
   "version": "1.0.0",
-  "description": "Real-time Solana lending liquidation tracker with Telegram alerts, Pyth prices, Solend + Marginfi support",
+  "description": "Track liquidations on Solana lending protocols and send Telegram alerts",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "node src/index.js"
   },
-  "engines": {
-    "node": "20.x"
-  },
   "dependencies": {
-    "@pythnetwork/price-service-sdk": "^1.5.0",
-    "@solana/spl-token": "^0.4.11",
-    "@solendprotocol/solend-sdk": "^0.15.0",
+    "@solana/spl-token": "^0.3.16",
+    "@solana/web3.js": "^1.79.0",
+    "@solendprotocol/solend-sdk": "^0.14.26",
+    "@mrgnlabs/marginfi-client-v2": "^0.1.16",
+    "@mrgnlabs/mrgn-common": "^0.1.9",
     "bn.js": "^5.2.1",
     "express": "^4.18.2",
-    "node-fetch": "^3.3.2",
-    "@solana/web3.js": "^1.93.0"
-  }
+    "node-fetch": "^2.6.12",
+    "@pythnetwork/price-service-sdk": "^1.3.0",
+    "base-58": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Your Name",
+  "license": "MIT"
 }
