@@ -1,6 +1,7 @@
 {
   "name": "solana-liquidator",
   "version": "1.0.0",
+  "description": "A minimal Solend liquidation bot",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
