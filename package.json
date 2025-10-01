@@ -1,21 +1,35 @@
 {
-  "name": "solend-liquidation-tracker",
+  "name": "solana-lending-liquidation-tracker",
   "version": "1.0.0",
-  "description": "Real-time Solend liquidation tracker with Telegram alerts",
-  "type": "module",
+  "description": "Real-time Solana lending protocols liquidation tracker (Solend, Marginfi v2, Kamino) with Telegram alerts",
   "main": "src/index.js",
+  "type": "module",
   "scripts": {
     "start": "node src/index.js"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "ws": "^8.13.0",
-    "node-fetch": "^3.3.2",
-    "@solana/web3.js": "^1.91.0"
-  },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
+  "dependencies": {
+    "@mrgnlabs/marginfi-client-v2": "^6.1.4",
+    "@mrgnlabs/mrgn-common": "^1.0.16",
+    "@pythnetwork/price-service-sdk": "^1.8.0",
+    "@solana/web3.js": "^1.79.2",
+    "@solendprotocol/solend-sdk": "^0.14.26",
+    "bn.js": "^5.2.1",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2",
+    "@solana/spl-token": "^0.4.7"
+  },
+  "keywords": [
+    "solana",
+    "solend",
+    "marginfi",
+    "kamino",
+    "liquidation",
+    "telegram",
+    "tracker"
+  ],
   "author": "Your Name",
   "license": "MIT"
 }
