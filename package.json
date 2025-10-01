@@ -1,0 +1,21 @@
+{
+  "name": "solana-lending-liquidation-tracker",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@kamino-finance/klend-sdk": "^1.0.0",
+    "@mrgnlabs/marginfi-client-v2": "^0.1.0",
+    "@mrgnlabs/mrgn-common": "^0.1.0",
+    "@pythnetwork/price-service-sdk": "^1.0.0",
+    "@solana/spl-token": "^0.3.0",
+    "@solendprotocol/solend-sdk": "^1.0.0",
+    "@solana/web3.js": "^1.78.0",
+    "bn.js": "^5.2.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.12"
+  }
+}
