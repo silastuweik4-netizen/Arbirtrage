@@ -1,0 +1,13 @@
+{
+  "name": "solana-web-service",
+  "version": "1.0.0",
+  "description": "A simple Solana web service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@solana/web3.js": "^1.73.0"
+  }
+}
