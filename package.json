@@ -1,12 +1,11 @@
 {
-  "name": "solend-liquidation-monitor",
+  "name": "sol-arb",
   "version": "1.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
+  "type": "module",
+  "scripts": { "start": "node src/index.js" },
   "dependencies": {
-    "@solana/web3.js": "^1.73.0",
-    "node-fetch": "^2.6.7"
+    "@solana/web3.js": "^1.95",
+    "dotenv": "^16.4",
+    "express": "^4.21"
   }
 }
