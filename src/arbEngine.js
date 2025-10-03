@@ -1,16 +1,17 @@
+//  src/arbEngine.js  – base-58 edition
 import { Connection, PublicKey, Keypair, Transaction, TransactionInstruction } from '@solana/web3.js';
-import { decryptKey } from './wallet.js';
+import { getKeypair } from './wallet.js';          // ① NEW
 import { config } from 'dotenv'; config();
 
-const RPC = process.env.RPC_URL;
-const JUP_API = process.env.JUPITER_API;
+const RPC       = process.env.RPC_URL;
+const JUP_API   = process.env.JUPITER_API;
 const JITO_AUTH = process.env.JITO_AUTH_KEY;
 const LOAN_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // USDC
-const LOAN_AMT = Number(process.env.LOAN_CAP || 20000) * 1e6;
-const MIN_PROFIT = Number(process.env.PROFIT_THRESHOLD || 0.0008);
+const LOAN_AMT  = Number(process.env.LOAN_CAP || 20000) * 1e6;
+const MIN_PROFIT= Number(process.env.PROFIT_THRESHOLD || 0.0008);
 
-const conn = new Connection(RPC, 'confirmed');
-const keypair = Keypair.fromSecretKey(Uint8Array.from(decryptKey()));
+const conn   = new Connection(RPC, 'confirmed');
+const keypair= getKeypair();                       // ② CHANGED
 
 async function jupQuote(inputMint, outputMint, amount) {
   const url = `${JUP_API}/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=20`;
@@ -33,22 +34,20 @@ async function submitJito(txSerialize) {
 }
 
 export async function scanAndArb() {
-  // 1. quotes
   const q1 = await jupQuote(LOAN_MINT.toString(), 'UXD6m9dlc4a4X2DpksYNdVURGpmnmXb7hX9jAQ89FxJ', LOAN_AMT);
-  const q2 = await jupQuote('UXD6m9dlc4a4X2DpksYNdVURGpmnmXb7hX9jAQ89FxJ', LOAN_MINT.toString(), q1.outAmount);
+  const q2 = await jupQuote('UXD6m9dlc4a4X2DpksYNdVURGpmnmXb7hX9jAQ89FxJ', LOAN_MINT.toString(), q1?.outAmount || 0);
   if (!q1 || !q2) return { status: 'no quote' };
   const profit = Number(q2.outAmount - LOAN_AMT) / LOAN_AMT;
   if (profit < MIN_PROFIT) return { status: 'profit low', profit };
 
-  // 2. build flash-tx
   const tx = new Transaction().add(
-    new TransactionInstruction({ keys: [], programId: new PublicKey('So1endDq2YkqhpRhqwjU2uVQtj8B5X8Jx7Mg6k8SiYo'), data: Buffer.alloc(0) }), // flash-loan placeholder
+    new TransactionInstruction({ keys: [], programId: new PublicKey('So1endDq2YkqhpRhqwjU2uVQtj8B5X8Jx7Mg6k8SiYo'), data: Buffer.alloc(0) }),
     ...Transaction.from(await jupSwapIx(q1)).instructions,
     ...Transaction.from(await jupSwapIx(q2)).instructions
   );
-  tx.feePayer = keypair.publicKey; tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash; tx.sign(keypair);
-
-  // 3. send bundle
+  tx.feePayer = keypair.publicKey;
+  tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+  tx.sign(keypair);
   const bundleId = await submitJito(tx.serialize());
   return { status: 'submitted', profit, bundleId, txSig: tx.signature.toString('hex') };
 }
