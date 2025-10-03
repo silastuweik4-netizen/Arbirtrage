@@ -1,11 +1,19 @@
 {
   "name": "sol-arb",
   "version": "1.0.0",
+  "description": "Solana flash-loan de-peg arb bot",
   "type": "module",
-  "scripts": { "start": "node src/index.js" },
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
   "dependencies": {
     "@solana/web3.js": "^1.95",
+    "bs58": "^5.0.0",
     "dotenv": "^16.4",
     "express": "^4.21"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
