@@ -11,7 +11,8 @@
     "@solana/web3.js": "^1.95",
     "bs58": "^5.0.0",
     "dotenv": "^16.4",
-    "express": "^4.21"
+    "express": "^4.21",
+    "node-telegram-bot-api": "^0.64.0"
   },
   "engines": {
     "node": ">=18"
