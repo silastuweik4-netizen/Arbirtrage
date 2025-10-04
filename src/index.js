@@ -9,3 +9,9 @@ app.post('/run', async (_req, res) => {
 });
 const port = process.env.PORT || 10000;
 app.listen(port, () => console.log('🚀 ' + port));
+import { startScanner } from './memescanner.js';
+
+// start side-car scanner (non-blocking)
+if (process.env.SCAN_MEME !== 'false') {
+  startScanner().catch(e => console.log('Scanner crash:', e));
+}
