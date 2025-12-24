@@ -1,15 +1,12 @@
-// package.json - USE THIS EXACT FILE
 {
   "name": "arbirtrage",
   "version": "1.0.0",
   "description": "Solana flash-loan arbitrage bot",
-  "main": "debug-solana.js",
+  "main": "start-debug.js",
   "type": "module",
   "scripts": {
-    "start": "node debug-solana.js",
-    "dev": "node index.js",
-    "debug": "node debug-solana.js",
-    "prod": "node index.js"
+    "start": "node start-debug.js",
+    "dev": "node index.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.95.3",
