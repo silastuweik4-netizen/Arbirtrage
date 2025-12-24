@@ -1,21 +1,16 @@
 {
   "name": "arbirtrage",
   "version": "1.0.0",
-  "description": "Solana flash-loan arbitrage bot",
-  "main": "index.js",
+  "description": "Solana flash-loan arbitrage bot", 
+  "main": "debug-solana.js",
   "type": "module",
   "scripts": {
-    "start": "node render-debug-fixed.js",
-    "dev": "node index.js",
-    "debug": "node render-debug-fixed.js",
-    "normal": "node index.js",
-    "monitor": "node diagnostic.js",
-    "research": "node forceProof.js",
-    "peek": "node liveProof.js"
+    "start": "node debug-solana.js",
+    "dev": "node index.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.95.3",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.3.1", 
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.64.0"
