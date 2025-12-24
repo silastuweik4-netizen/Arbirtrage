@@ -1,25 +1,32 @@
-//  start.js  — bulletproof startup
+//  start.js  — add arbitrage scanning
 require('dotenv').config();
 
 console.log('🚀 SOLANA ARB V2 STARTING...');
 console.log('Time:', new Date().toLocaleString());
 
-// Keep alive with heartbeat
-setInterval(() => {
-  console.log('💓 Heartbeat:', new Date().toLocaleString());
+// Import arbitrage scanner
+const { scanArbitrage } = require('./arbitrage');
+
+// Scan every 30 seconds
+setInterval(async () => {
+  console.log('\n⏰ Starting arbitrage scan...');
+  const opportunity = await scanArbitrage();
+  
+  if (opportunity) {
+    console.log('🎯 PROFITABLE TRADE FOUND:', opportunity);
+    // Here you would execute the trade
+  } else {
+    console.log('❌ No profitable opportunities this scan');
+  }
 }, 30000); // Every 30 seconds
 
-// Simple test that can't fail
-try {
-  console.log('✅ Environment loaded');
-  console.log('RPC_URL exists:', !!process.env.RPC_URL);
-  console.log('🎯 Service is LIVE - ready to add arbitrage logic');
-  
-  // Add your arbitrage code here once this works
-  
-} catch (error) {
-  console.error('💥 Error:', error.message);
-  process.exit(1);
-}
+// Initial scan
+setTimeout(async () => {
+  console.log('🎯 Initial scan starting...');
+  await scanArbitrage();
+}, 5000); // Start first scan after 5 seconds
 
-console.log('🎉 Service started successfully!');
+// Keep heartbeat
+setInterval(() => {
+  console.log('💓 Heartbeat:', new Date().toLocaleString());
+}, 60000); // Every minute
