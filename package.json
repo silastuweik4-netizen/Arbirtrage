@@ -1,16 +1,19 @@
+// package.json - USE THIS EXACT FILE
 {
   "name": "arbirtrage",
   "version": "1.0.0",
-  "description": "Solana flash-loan arbitrage bot", 
+  "description": "Solana flash-loan arbitrage bot",
   "main": "debug-solana.js",
   "type": "module",
   "scripts": {
     "start": "node debug-solana.js",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "debug": "node debug-solana.js",
+    "prod": "node index.js"
   },
   "dependencies": {
     "@solana/web3.js": "^1.95.3",
-    "dotenv": "^16.3.1", 
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.64.0"
