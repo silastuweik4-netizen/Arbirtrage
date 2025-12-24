@@ -1,0 +1,21 @@
+{
+  "name": "solana-arb-v2",
+  "version": "2.0.0",
+  "description": "Solana arbitrage bot - CommonJS version",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node start.js",
+    "debug": "node debug.js"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.3",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
