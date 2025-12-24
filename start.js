@@ -1,37 +1,47 @@
-//  start.js  — COMPLETE arbitrage system
+//  start.js  — COMPLETE system with execution
 require('dotenv').config();
 
-console.log('🚀 SOLANA ARB V2 STARTING...');
+console.log('🚀 SOLANA ARB V2 - COMPLETE SYSTEM');
 console.log('Time:', new Date().toLocaleString());
 
-// Import working arbitrage
 const { simulateArbitrage } = require('./complete-arbitrage');
+const { executeTrade } = require('./execute-trade');
+const { notifyProfit } = require('./notify-profit');
 
-// Scan every 30 seconds
+let totalProfit = 0;
+let tradeCount = 0;
+
 setInterval(async () => {
-  console.log('\n⏰ Starting arbitrage scan...');
+  console.log('\n⏰ Starting complete arbitrage cycle...');
+  
   const opportunity = await simulateArbitrage();
   
-  if (opportunity && opportunity.net > 0.01) { // $0.01 minimum
-    console.log('🚨 PROFITABLE OPPORTUNITY FOUND!');
-    console.log('Details:', opportunity);
+  if (opportunity && opportunity.net > 0.01) {
+    console.log('🚨 EXECUTING TRADE!');
     
-    // Here you would execute the trade
-    // For now, just log and celebrate!
-    console.log('🎉 TRADE WOULD EXECUTE HERE!');
+    // Execute trade
+    const result = await executeTrade(opportunity);
     
+    if (result.success) {
+      // Track profits
+      totalProfit += opportunity.net;
+      tradeCount++;
+      
+      console.log(`✅ TRADE SUCCESSFUL!`);
+      console.log(`💰 This trade: $${opportunity.net.toFixed(4)}`);
+      console.log(`📈 Total profit: $${totalProfit.toFixed(4)}`);
+      console.log(`🔢 Trade count: ${tradeCount}`);
+      
+      // Notify
+      await notifyProfit(opportunity);
+    }
   } else {
-    console.log('❌ No profitable opportunities this scan');
+    console.log('❌ No profitable opportunities');
   }
 }, 30000);
 
 // Initial scan
 setTimeout(async () => {
-  console.log('🎯 Initial arbitrage scan...');
+  console.log('🎯 Initial complete scan...');
   await simulateArbitrage();
 }, 5000);
-
-// Keep heartbeat
-setInterval(() => {
-  console.log('💓 Heartbeat:', new Date().toLocaleString());
-}, 60000);
