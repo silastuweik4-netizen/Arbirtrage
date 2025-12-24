@@ -1,32 +1,27 @@
-//  start.js  — add arbitrage scanning
+//  start.js  — use Lite API
 require('dotenv').config();
 
 console.log('🚀 SOLANA ARB V2 STARTING...');
 console.log('Time:', new Date().toLocaleString());
 
-// Import arbitrage scanner
-const { scanArbitrage } = require('./arbitrage');
+// Import Lite API scanner
+const { scanArbitrageLite } = require('./arbitrage-lite');
 
 // Scan every 30 seconds
 setInterval(async () => {
-  console.log('\n⏰ Starting arbitrage scan...');
-  const opportunity = await scanArbitrage();
+  console.log('\n⏰ Starting Lite API arbitrage scan...');
+  const opportunity = await scanArbitrageLite();
   
   if (opportunity) {
     console.log('🎯 PROFITABLE TRADE FOUND:', opportunity);
-    // Here you would execute the trade
+    // Execute trade logic here
   } else {
     console.log('❌ No profitable opportunities this scan');
   }
-}, 30000); // Every 30 seconds
+}, 30000);
 
 // Initial scan
 setTimeout(async () => {
-  console.log('🎯 Initial scan starting...');
-  await scanArbitrage();
-}, 5000); // Start first scan after 5 seconds
-
-// Keep heartbeat
-setInterval(() => {
-  console.log('💓 Heartbeat:', new Date().toLocaleString());
-}, 60000); // Every minute
+  console.log('🎯 Initial Lite API scan starting...');
+  await scanArbitrageLite();
+}, 5000);
