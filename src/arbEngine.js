@@ -9,7 +9,7 @@ const JUP_API   = 'https://quote-api.jupiter.ag/v6';
 const JITO_AUTH = process.env.JITO_AUTH_KEY;
 const LOAN_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 const LOAN_AMT  = Number(process.env.LOAN_CAP || 20_000) * 1e6;
-const MIN_PROFIT= Number(process.env.PROFIT_THRESHOLD || 0.002); // 0.2 %
+const MIN_PROFIT= Number(process.env.PROFIT_THRESHOLD || 0.0005); // 0.05 %
 const keypair   = getKeypair();
 
 const BASE_MINT = 'So11111111111111111111111111111111111111112'; // SOL only (Dec period)
