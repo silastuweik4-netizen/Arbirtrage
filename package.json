@@ -1,0 +1,21 @@
+{
+  "name": "zero-capital-flash-arb",
+  "version": "3.0.0",
+  "description": "Zero-capital Kamino flash loan arbitrage bot - Render-safe APIs",
+  "main": "zero-capital-main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node zero-capital-main.js",
+    "dev": "node zero-capital-main.js",
+    "test": "node test-zero-capital.js"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.3",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^2.7.0",
+    "bs58": "^4.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
