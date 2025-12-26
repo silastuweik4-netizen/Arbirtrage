@@ -1,4 +1,7 @@
 // detect.js
+import { fetch } from 'undici';          // <-- add this
+const SOL_USDC_MINT = 'So11111111111111111111111111111111111111112_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+// rest of file identical … // detect.js
 const SOL_USDC_MINT = 'So11111111111111111111111111111111111111112_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 async function raydiumPrice() {
