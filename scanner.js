@@ -6,7 +6,7 @@ import axios from 'axios';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
 const ARBITRAGE_THRESHOLD_PERCENT = 0.5; // Alert if difference > 0.5%
-const MIN_LIQUIDITY_USD = 50000; // Only scan pairs with more than $50k liquidity
+const MIN_LIQUIDITY_USD = 5000; // Only scan pairs with more than $50k liquidity
 
 // --- Notification Function ---
 async function sendTelegramAlert(message) {
