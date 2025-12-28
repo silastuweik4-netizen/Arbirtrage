@@ -5,7 +5,7 @@ import axios from 'axios';
 // --- Configuration ---
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const CHAT_ID = process.env.CHAT_ID;
-const ARBITRAGE_THRESHOLD_PERCENT = 0.5;
+const ARBITRAGE_THRESHOLD_PERCENT = 3;
 const MIN_LIQUIDITY_USD = 5000;
 
 // *** HYBRID LIST: A list of popular tokens to search for ***
