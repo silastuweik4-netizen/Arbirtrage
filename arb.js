@@ -1,0 +1,60 @@
+/*  arb.js  –  WBTC/USDC spread watcher with retry  */
+require('dotenv').config();
+const ethers = require('ethers');
+const { notify } = require('./bot');
+
+/* ----------  RPCs  ---------- */
+const rpcList = [
+  'https://arbitrum-one.public.blastapi.io',
+  'https://arb1.arbitrum.io/rpc',
+  'https://rpc.ankr.com/arbitrum'
+];
+let rpcIndex = 0;
+function getProvider() {
+  return new ethers.providers.JsonRpcProvider(rpcList[rpcIndex], { name: 'arbitrum', chainId: 42161 });
+}
+
+/* ----------  POOLS (live, lowercase)  ---------- */
+const POOL_A = { addr: '0x28b9c7ab9d5a52bb62825ffdf61d2c2b4444e42c', fee: 500,  name: 'WBTC/USDC-0.05%' };
+const POOL_B = { addr: '0x5c4a8c6ea475c7ec163a06ac74c8f6d5ef6082e5', fee: 3000, name: 'WBTC/USDC-0.3%'  };
+
+const POOL_ABI = [
+  'function slot0() view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
+  'function liquidity() view returns (uint128)'
+];
+
+/* ----------  PRICE CALL WITH RETRY  ---------- */
+async function getPrice(poolMeta, retries = 2) {
+  try {
+    const c = new ethers.Contract(poolMeta.addr, POOL_ABI, getProvider());
+    const { sqrtPriceX96 } = await c.slot0();
+    const sqrt = sqrtPriceX96.mul(sqrtPriceX96);
+    const shift = ethers.BigNumber.from(2).pow(192);
+    const raw = sqrt.mul(1e8).div(shift); // WBTC 8 dec → USDC 6 dec
+    return parseFloat(ethers.utils.formatUnits(raw, 6));
+  } catch (e) {
+    if (retries > 0) {
+      console.warn('RPC fail, retry…', e.code);
+      rpcIndex = (rpcIndex + 1) % rpcList.length;
+      await new Promise(r => setTimeout(r, 1000));
+      return getPrice(poolMeta, retries - 1);
+    }
+    throw e;
+  }
+}
+
+function pct(a, b) { return Math.abs(a / b - 1) * 100; }
+
+/* ----------  SCAN  ---------- */
+async function scan() {
+  try {
+    const [priceA, priceB] = await Promise.all([getPrice(POOL_A), getPrice(POOL_B)]);
+    const spread = pct(priceA, priceB);
+    if (spread < 0.3) return;
+    const block = await getProvider().getBlockNumber();
+    const msg = `🚨 WBTC/USDC spread ${spread.toFixed(2)}%\nPoolA ${priceA.toFixed(2)}  (${POOL_A.name})\nPoolB ${priceB.toFixed(2)}  (${POOL_B.name})\nBlock ${block}`;
+    await notify(msg);
+  } catch (e) { console.error('Scan error:', e.message); }
+}
+
+exports.startArbLoop = () => { scan(); setInterval(scan, 30_000); };
