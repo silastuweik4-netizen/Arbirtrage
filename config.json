@@ -1,0 +1,31 @@
+{
+  "rpcList": [
+    "https://arbitrum-one.public.blastapi.io",
+    "https://arb1.arbitrum.io/rpc",
+    "https://rpc.ankr.com/arbitrum"
+  ],
+  "pools": {
+    "poolA": {
+      "addr": "0x17c14D2c404D167802b16C450d3c99F88F2c4F4d",
+      "fee": 500,
+      "name": "WBTC/USDC-0.05%"
+    },
+    "poolB": {
+      "addr": "0x905dfCD5649343956C564A899D5E25817c5fCb0C",
+      "fee": 3000,
+      "name": "WBTC/USDC-0.3%"
+    }
+  },
+  "thresholds": {
+    "spreadPercent": 0.3
+  },
+  "timing": {
+    "scanIntervalMs": 30000
+  },
+  "trade": {
+    "estimatedGasLimit": 350000,
+    "ethPriceInUsdc": 3000,
+    "tradeSizeUSD": 10000,
+    "estimatedSlippagePercent": 0.05
+  }
+}
