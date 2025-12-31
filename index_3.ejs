@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra-Sniper v5</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .card { background-color: #0f172a; border: 1px solid #1e293b; border-radius: 16px; }
+        .badge-ultra { background-color: #f59e0b; color: #451a03; font-weight: 800; animation: flash 1s infinite; }
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .text-profit { color: #10b981; font-weight: bold; }
+        .chain-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Ultra-Sniper <span class="badge bg-warning text-dark">v5</span></h1>
+                <p class="text-muted mb-0">5-Minute Golden Window Arbitrage</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-dark border border-secondary p-2">Last Scan: <%= data.timestamp %></span>
+                <div class="mt-1"><small class="text-muted">Fresh Tokens (< 5m): <%= data.freshTokens %></small></div>
+            </div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Golden Window Snipes</h2>
+                <span class="badge badge-ultra">ULTRA-FAST SCANNING</span>
+            </div>
+            <% if (data.opportunities && data.opportunities.length > 0) { %>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Chain</th>
+                                <th>Token</th>
+                                <th>Spread</th>
+                                <th>Buy On</th>
+                                <th>Sell On</th>
+                                <th>Snipe Size</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% data.opportunities.forEach(opp => { %>
+                                <tr>
+                                    <td><span class="badge bg-primary chain-badge"><%= opp.chain %></span></td>
+                                    <td>
+                                        <strong><%= opp.token %></strong><br>
+                                        <small class="text-muted" style="font-size: 0.6rem;"><%= opp.address %></small>
+                                    </td>
+                                    <td><span class="text-profit">+<%= opp.spread %>%</span></td>
+                                    <td><%= opp.buy.name %> ($<%= opp.buy.price.toFixed(6) %>)</td>
+                                    <td><%= opp.sell.name %> ($<%= opp.sell.price.toFixed(6) %>)</td>
+                                    <td>$<%= opp.optimalSize %></td>
+                                    <td><small><%= opp.time %></small></td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } else { %>
+                <div class="alert alert-dark border-secondary text-muted text-center py-5">
+                    <div class="spinner-grow spinner-grow-sm text-warning mb-2" role="status"></div><br>
+                    Watching the 5-minute window on Arb, Base & Solana... No fresh spreads detected.
+                </div>
+            <% } %>
+        </div>
+
+        <div class="mt-4 text-center text-muted">
+            <small>Scanning for tokens indexed in the last 300 seconds. High-frequency execution required.</small>
+        </div>
+    </div>
+    <script>setTimeout(() => { location.reload(); }, 30000);</script>
+</body>
+</html>
