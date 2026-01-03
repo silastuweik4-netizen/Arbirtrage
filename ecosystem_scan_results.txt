@@ -1,0 +1,12 @@
+🚀 Starting Targeted Ecosystem Scan (AERO, VIRTUAL, USDbC)
+
+| Pair | Uni Price | Aero Price | Net Profit ($) | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| AERO/WETH (3000) | 0.0159 | 0.0157 | 0.45 | ✅ PROFIT |
+| AERO/WETH (10000) | 0.0157 | 0.0157 | -0.21 | ❌ NO |
+| VIRTUAL/WETH (3000) | N/A | N/A | N/A | ⚠️ Error |
+| VIRTUAL/WETH (10000) | N/A | N/A | N/A | ⚠️ Error |
+| WETH/USDbC (3000) | N/A | N/A | N/A | ⚠️ Error |
+| USDC/USDbC (100) | N/A | N/A | N/A | ⚠️ Error |
+| cbBTC/USDC (3000) | 88497.9353 | 65633.7590 | 22831.16 | ✅ PROFIT |
+| cbETH/WETH (500) | N/A | N/A | N/A | ⚠️ Error |
