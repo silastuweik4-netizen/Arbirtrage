@@ -13,7 +13,7 @@ module.exports = {
         arbitrageContract:  '0xaBcAd13dB95d80DEe0a96a12856e65A4210ca537', // your deployed address
         uniswapQuoterV2:    '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
         aerodromeRouter:    '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43',
-        aerodromeFactory:   '0x5C3F18F06CC09CA1910767A7a647aD5e8C9e2c5f'  // checksummed
+        aerodromeFactory:   '0x5C3F18F06CC09CA1910767A7a647aD5e8C9e2c5F'  // checksummed
     },
 
     // Trading Settings
