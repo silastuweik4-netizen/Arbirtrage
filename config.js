@@ -1,7 +1,7 @@
 // config.js
 module.exports = {
     // Network Configuration
-    BASE_RPC_URL: 'https://rpc.ankr.com/base/7926978796684879687968796879687968796879687968796879687968796879',
+    BASE_RPC_URL: 'https://g.w.lavanet.xyz:443/gateway/base/rpc-http/74c33b48f194b4900d1b1d4b108fd2ae',
     FLASHBOTS_RPC_URL: 'https://rpc.flashbots.net/base',
     CHAIN_ID: 8453,
 
