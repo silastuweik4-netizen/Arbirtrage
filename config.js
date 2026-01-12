@@ -1,48 +1,46 @@
 // config.js
 module.exports = {
     // Network Configuration
-    BASE_RPC_URL: 'https://g.w.lavanet.xyz:443/gateway/base/rpc-http/74c33b48f194b4900d1b1d4b108fd2ae', // Your Ankr RPC
+    BASE_RPC_URL: 'https://base.llamarpc.com',
     FLASHBOTS_RPC_URL: 'https://rpc.flashbots.net/base',
     CHAIN_ID: 8453,
 
-    // Wallet Configuration (Read from Render Environment Variables)
+    // Wallet Configuration
     PRIVATE_KEY: process.env.PRIVATE_KEY || '',
     
     // Contract Addresses
     contracts: {
-        arbitrageContract: '0xaBcAd13dB95d80DEe0a96a12856e65A4210ca537', // YOUR NEW DEPLOYED ADDRESS
-        uniswapV3Quoter: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
-        aerodromeRouter: '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'
+        arbitrageContract: '0xaBcAd13dB95d80DEe0a96a12856e65A4210ca537'.toLowerCase(),
+        uniswapQuoterV2: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'.toLowerCase(),
+        aerodromeRouter: '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43'.toLowerCase(),
+        aerodromeFactory: '0x0000000000000000000000000000000000000000'
     },
 
     // Trading Settings
     settings: {
-        executionThreshold: 5.00, // Minimum $5 profit to execute
-        maxFlashloanAmount: '1000', // Max amount to borrow in USD
+        executionThreshold: 5.00,
+        maxFlashloanAmount: '1000',
         gasLimit: 500000,
-        scanInterval: 10000 // 10 seconds
+        scanInterval: 10000,
+        depthAmount: 10
     },
 
-    // Token List (47 Tokens)
+    // Token List
     tokens: {
-        'WETH': '0x4200000000000000000000000000000000000006',
-        'USDC': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-        'USDbC': '0xd9aAEc2AD9CC7352E3049674812033E232768911',
-        'DAI': '0x50c5725949A6F0c72E6C4564183930E918605390',
-        'cbBTC': '0xcbB7C915AB5C7E49998D870c1118C6f91c2E400C',
-        'wstETH': '0xc1CBa3fC4D1301A46698759358619096E593bbBb',
-        'DEGEN': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
-        'AERO': '0x940181300A0940181300A0940181300A09401813',
-        'VIRTUAL': '0x0b3e328455822222222222222222222222222222',
-        'ZORA': '0x0000000000000000000000000000000000000000', // Placeholder
-        // ... (The bot will use the tokens defined in your full config.js)
+        'WETH': { address: '0x4200000000000000000000000000000000000006'.toLowerCase(), decimals: 18, symbol: 'WETH' },
+        'USDC': { address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'.toLowerCase(), decimals: 6, symbol: 'USDC' },
+        'USDbC': { address: '0xd9AaEC2AD9CC7352E3049674812033E232768911'.toLowerCase(), decimals: 6, symbol: 'USDbC' },
+        'cbBTC': { address: '0xCbb7c915Ab5C7e49998D870C1118C6f91c2E400c'.toLowerCase(), decimals: 8, symbol: 'cbBTC' },
+        'AERO': { address: '0x940181300A0940181300A0940181300A09401813'.toLowerCase(), decimals: 18, symbol: 'AERO' },
+        'VIRTUAL': { address: '0x0b3E328455822222222222222222222222222222'.toLowerCase(), decimals: 18, symbol: 'VIRTUAL' }
     },
 
-    // Pair List (55 Pairs)
+    // Pair List
     pairs: [
         { name: 'WETH/USDC', token0: 'WETH', token1: 'USDC', fee: 500 },
         { name: 'WETH/USDbC', token0: 'WETH', token1: 'USDbC', fee: 500 },
         { name: 'cbBTC/WETH', token0: 'cbBTC', token1: 'WETH', fee: 500 },
-        // ... (The bot will use the pairs defined in your full config.js)
+        { name: 'AERO/USDC', token0: 'AERO', token1: 'USDC', fee: 3000 },
+        { name: 'VIRTUAL/WETH', token0: 'VIRTUAL', token1: 'WETH', fee: 3000 }
     ]
 };

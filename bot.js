@@ -41,7 +41,6 @@ class ArbitrageBot {
 
   formatAmount(amount, decimals) { return ethers.formatUnits(amount, decimals); }
   parseAmount(amount, decimals) { 
-    // FIX 1: Ensure we don't have too many decimals before parsing
     const fixedAmount = parseFloat(amount).toFixed(decimals);
     return ethers.parseUnits(fixedAmount, decimals); 
   }
@@ -109,7 +108,6 @@ class ArbitrageBot {
   }
 
   encodeAerodromeSwap(tokenIn, tokenOut, amountIn, amountOutMin) {
-    // FIX 2: Using a more robust ABI fragment for Aerodrome/UniswapV2
     const iface = new ethers.Interface([
       'function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, (address from, address to, bool stable, address factory)[] routes, address to, uint256 deadline) external returns (uint256[])'
     ]);
@@ -146,7 +144,6 @@ class ArbitrageBot {
   async executeArbitrage(pair, optimalSize, netProfit) {
     if (!this.wallet) return;
     
-    // SAFETY CHECK: Don't execute if contract address is default
     if (config.contracts.arbitrageContract === '0x0000000000000000000000000000000000000000') {
       console.log(chalk.yellow(`⚠️  Opportunity found for ${pair.token0}/${pair.token1} ($${netProfit.toFixed(2)}), but no contract address is set.`));
       return;
@@ -207,7 +204,7 @@ class ArbitrageBot {
     this.isRunning = true;
     while (this.isRunning) {
       await Promise.all(config.pairs.map(pair => this.checkPair(pair)));
-      await new Promise(r => setTimeout(r, config.settings.updateInterval));
+      await new Promise(r => setTimeout(r, config.settings.scanInterval));
     }
   }
 

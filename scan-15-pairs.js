@@ -23,8 +23,14 @@ async function scanAllPairs() {
     try {
       const amountInRaw = ethers.parseUnits(testSize.toString(), t0.decimals);
       
-      // Uni Quote
-      const params = { tokenIn: t0.address, tokenOut: t1.address, amountIn: amountInRaw, fee: pair.fee, sqrtPriceLimitX96: 0 };
+      // Uni Quote (V2)
+      const params = {
+        tokenIn: t0.address,
+        tokenOut: t1.address,
+        amountIn: amountInRaw,
+        fee: pair.fee,
+        sqrtPriceLimitX96: 0
+      };
       const uniResult = await uniswapQuoter.quoteExactInputSingle.staticCall(params);
       const uniOut = parseFloat(ethers.formatUnits(uniResult[0], t1.decimals));
       
@@ -44,7 +50,7 @@ async function scanAllPairs() {
       console.log(`| ${t0.symbol}/${t1.symbol} (${pair.fee}) | ${uniOut.toFixed(4)} | ${aeroOut.toFixed(4)} | ${netProfit.toFixed(2)} | ${status} |`);
 
     } catch (e) {
-      console.log(`| ${t0.symbol}/${t1.symbol} (${pair.fee}) | N/A | N/A | N/A | ⚠️ Error |`);
+      console.log(`| ${t0.symbol}/${t1.symbol} (${pair.fee}) | N/A | N/A | N/A | ⚠️ Error: ${e.message} |`);
     }
   }
 }
