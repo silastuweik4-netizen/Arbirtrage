@@ -1,7 +1,7 @@
 // config.js - FIXED VERSION
 module.exports = {
     // Network Configuration
-    BASE_RPC_URL: 'https://base-rpc.publicnode.com',
+    BASE_RPC_URL: 'https://base-mainnet.g.alchemy.com/v2/'httpshttps,
     
     // FIXED: Use Base-compatible RPC for execution
     // Options for Base MEV protection:
