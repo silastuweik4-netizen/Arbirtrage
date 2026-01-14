@@ -1,0 +1,17 @@
+# render.yaml
+services:
+  - type: web
+    name: base-arb-bot
+    env: node
+    buildCommand: npm ci
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PRIVATE_KEY
+        sync: false        # set in Render dashboard → Environment
+      - key: BASE_RPC_URL
+        value: https://base-mainnet.g.alchemy.com/v2/c9sgWYXHHHwxgwSSDwR6gP8PWB5MuTQ0
+    healthCheckPath: /health
+    autoDeploy: true
+    plan: starter         # ← choose “starter” or “standard” as you wish
