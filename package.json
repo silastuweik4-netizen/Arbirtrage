@@ -5,12 +5,24 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "node scan-15-pairs.js"
+    "deploy": "node deploy.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
+  "keywords": [
+    "arbitrage",
+    "defi",
+    "base",
+    "flashloan",
+    "mev"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
+    "ethers": "^6.16.0",
     "chalk": "^4.1.2",
-    "dotenv": "^16.4.7",
-    "ethers": "^6.13.5"
+    "solc": "^0.8.18"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
