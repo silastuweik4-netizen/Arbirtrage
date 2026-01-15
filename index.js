@@ -1,5 +1,4 @@
-// index.js
-#!/usr/bin/env node
+
 /*
  * Aerodrome USDC/USDbC spread – live on Base
  * Deployed as a Web Service on Render
