@@ -1,0 +1,14 @@
+{
+  "name": "base-arbitrage-monitor",
+  "version": "1.0.0",
+  "description": "Monitors for arbitrage opportunities on Base",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "ethers": "^6.8.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  }
+}
