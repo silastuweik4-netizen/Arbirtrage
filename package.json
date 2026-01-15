@@ -1,29 +1,14 @@
 {
-  "name": "base-arbitrage-bot",
-  "version": "5.0.0",
-  "description": "MEV-Protected Arbitrage Bot for Base Network",
+  "name": "aerodrome-spread-monitor",
+  "version": "1.0.0",
+  "description": "Monitors USDC/USDbC spread on Aerodrome as a Web Service",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "deploy": "node deploy.js",
-    "test": "echo \"No tests specified\" && exit 0"
+    "start": "node index.js"
   },
-  "keywords": [
-    "arbitrage",
-    "defi",
-    "base",
-    "flashloan",
-    "mev"
-  ],
-  "author": "",
-  "license": "MIT",
   "dependencies": {
-    "ethers": "^6.16.0",
-    "chalk": "^4.1.2",
-    "dotenv": "^16.4.5",
-    "solc": "^0.8.18"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "ethers": "^6.8.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2"
   }
 }
