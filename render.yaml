@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: base-arb-diff-fee
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    plan: free
