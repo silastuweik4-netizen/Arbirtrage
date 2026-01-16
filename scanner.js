@@ -68,7 +68,7 @@ class ArbitrageScanner {
         
         const pairsToScan = [
             { name: "WETH/USDC", in: TOKENS.WETH, out: TOKENS.USDC, decOut: 6 },
-            { name: "cbBTC/USDC", in: TOKENS.cbBTC, out: TOKENS.USDC, decOut: 6 },
+            { name: "cbBTC/USDC", in: TOKENS.cbBTC, out: TOKENS.USDC, decOut: 8 },
             { name: "AERO/USDC", in: TOKENS.AERO, out: TOKENS.USDC, decOut: 6 },
             { name: "VIRTUAL/WETH", in: TOKENS.VIRTUAL, out: TOKENS.WETH, decOut: 18 }
         ];
