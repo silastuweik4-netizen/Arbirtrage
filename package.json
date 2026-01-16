@@ -12,6 +12,6 @@
     "graphql-request": "^7.1.0",
     "csv-writer": "^1.6.0",
     "express": "^4.19.2",
-    "better-sqlite3": "^11.3.0"   // single-file, zero config
+    "better-sqlite3": "^11.3.0"
   }
 }
