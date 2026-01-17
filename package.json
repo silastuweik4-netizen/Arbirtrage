@@ -17,13 +17,3 @@
     "nodemon": "^3.0.2"
   }
 }
-```
-
-**Your project structure should be:**
-```
-Arbirtrage/
-├── detector.js
-├── server.js
-├── package.json          (← PURE JSON, no markdown)
-├── .env
-└── .gitignore
