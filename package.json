@@ -1,0 +1,29 @@
+{
+  "name": "cex-arbitrage-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "CEX arbitrage detection bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
+```
+
+**Your project structure should be:**
+```
+Arbirtrage/
+├── detector.js
+├── server.js
+├── package.json          (← PURE JSON, no markdown)
+├── .env
+└── .gitignore
