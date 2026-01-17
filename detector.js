@@ -91,7 +91,7 @@ class ArbitrageDetector {
         timeout: 5000,
       });
       const prices = {};
-      response.data.data.forEach((ticker) => {
+      response.data.forEach((ticker) => {
         prices[ticker.symbol] = parseFloat(ticker.last);
       });
       return prices;
