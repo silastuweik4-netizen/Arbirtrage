@@ -126,17 +126,9 @@ class PriceFetcher {
       if (poolAddress === ethers.constants.AddressZero) return 0;
 
       const t0Contract = new ethers.Contract(token0.address, ERC20_ABI, provider);
-      const t1Contract = new ethers.Contract(token1.address, ERC20_ABI, provider);
-      
-      const [bal0, bal1] = await Promise.all([
-        t0Contract.balanceOf(poolAddress),
-        t1Contract.balanceOf(poolAddress)
-      ]);
+      const bal0 = await t0Contract.balanceOf(poolAddress);
 
-      // Simple heuristic: liquidity is the sum of both tokens in USD
-      // For simplicity, we assume token0 or token1 is a stablecoin or WETH to estimate USD value
-      // If we can't estimate, we just return the raw balance of token0 as a proxy for now
-      // A better way would be to fetch the price of token0 and token1 in USD
+      // Simple heuristic: we return the raw balance of token0 as a proxy for liquidity
       return parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
     } catch (e) { return 0; }
   }
@@ -168,10 +160,11 @@ class ArbitrageDetector {
   async getSpreadData(pair) {
     const priceData = {};
     for (const dex of pair.dexes) {
-      // First check liquidity
+      // Step A: Fetch liquidity
       const liquidity = await this.prices.getLiquidity(pair.t0, pair.t1, dex);
-      // We use a simple threshold of token balance for now as a proxy for $5000
-      // In a real scenario, we'd convert this to USD
+      
+      // Step B: Calculate spread only if liquidity is present
+      // Note: In a production environment, you'd convert liquidity to USD here.
       if (liquidity > 0) {
         const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
         if (price && price.gt(0)) priceData[dex] = price;
@@ -202,26 +195,21 @@ class ArbitrageDetector {
     let opportunitiesFound = 0;
 
     for (const pair of VERIFIED_PAIRS) {
-      // Step 1: Fetch liquidity and calculate spread
+      // SEQUENCE: Fetch liquidity -> Calculate spread -> Fetch again -> Recalculate spread
+      
+      // 1. First Check: Fetch liquidity and calculate spread
       const firstCheck = await this.getSpreadData(pair);
       if (!firstCheck || firstCheck.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
 
-      // Step 2: Double check - Fetch again and recalculate
       console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}%). Double checking...`);
       
       // Small delay to ensure we're not just hitting a transient state
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // 2. Second Check: Fetch liquidity again and recalculate spread
       const secondCheck = await this.getSpreadData(pair);
       
       if (secondCheck && secondCheck.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
-        // Check if the opportunity is consistent
-        const spreadVariation = Math.abs(secondCheck.diff - firstCheck.diff);
-        if (spreadVariation > 50) { // If spread changed by more than 50%, it's likely unstable
-           console.log(`⚠️ Opportunity for ${pair.t0.name}/${pair.t1.name} rejected due to high volatility (Variation: ${spreadVariation.toFixed(2)}%)`);
-           continue;
-        }
-
         opportunitiesFound++;
         const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
         console.log(msg);
@@ -245,7 +233,7 @@ async function main() {
   http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
-    res.end('Arbitrage Bot is running with Double-Check Logic!\n');
+    res.end('Arbitrage Bot is running with Sequential Double-Check Logic!\n');
   }).listen(port, () => console.log(`Health check server running on port ${port}`));
 }
 
