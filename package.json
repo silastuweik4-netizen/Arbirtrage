@@ -1,7 +1,7 @@
 {
   "name": "base-chain-arbitrage-detector",
-  "version": "1.0.0",
-  "description": "Production-ready arbitrage opportunity detector for Base Chain",
+  "version": "2.0.0",
+  "description": "Professional multi-DEX arbitrage detector for Base Chain with real-time price and liquidity monitoring",
   "main": "detector.js",
   "scripts": {
     "start": "node detector.js",
@@ -12,9 +12,12 @@
     "base-chain",
     "defi",
     "uniswap",
-    "aerodrome"
+    "aerodrome",
+    "pancakeswap",
+    "dex",
+    "trading-bot"
   ],
-  "author": "",
+  "author": "silastuweik4-netizen",
   "license": "MIT",
   "dependencies": {
     "ethers": "^5.7.2",

@@ -1,192 +1,352 @@
-# Base Chain Arbitrage Detector Bot
+# Base Chain Multi-DEX Arbitrage Bot
 
-A production-ready Node.js bot that monitors DEX pairs on Base Chain for arbitrage opportunities and sends real-time alerts.
+A professional, production-ready arbitrage detection bot that monitors **four major DEXs** on Base Chain for real-time arbitrage opportunities with comprehensive price and liquidity tracking.
 
-## Features
+## 🎯 Features
 
-✅ **Real-time Monitoring** - Continuously scans token pairs across multiple DEXs
-✅ **Liquidity Validation** - Filters out tokens with zero liquidity or invalid data
-✅ **Multi-DEX Support** - Monitors Uniswap V3, Uniswap V2, and Aerodrome
-✅ **Price Difference Detection** - Identifies profitable arbitrage spreads
-✅ **Discord/Slack Alerts** - Webhooks for instant notifications
-✅ **Easy Deployment** - Ready for Render, Heroku, or any Node.js host
-✅ **Configurable** - Adjust thresholds, pairs, and scan intervals
+**✅ Multi-DEX Support**
+- **Uniswap V2** - Constant product AMM
+- **Uniswap V3** - Concentrated liquidity with multiple fee tiers
+- **Aerodrome Finance** - Solidly-based DEX with optimized liquidity
+- **PancakeSwap V3** - Concentrated liquidity with smart routing
 
-## Prerequisites
+**✅ Real-Time Monitoring**
+- Fetches live prices directly from on-chain DEX contracts
+- Compares prices across all available DEXs for each token pair
+- Identifies best buy/sell opportunities automatically
 
-- Node.js 16+ 
-- A Base Chain RPC endpoint (free from Infura or Alchemy)
-- Optional: Discord/Slack webhook for alerts
+**✅ Liquidity Validation**
+- Validates token contracts before trading
+- Checks pool existence and reserves
+- Filters out low-liquidity pools
 
-## Setup Instructions
+**✅ Professional Alerting**
+- Discord/Slack webhook integration
+- Detailed arbitrage opportunity notifications
+- Configurable profit thresholds
 
-### 1. Create a GitHub Repository
+**✅ Production Ready**
+- Error handling and retry logic
+- Comprehensive logging
+- Easy deployment to cloud platforms
+- Environment-based configuration
 
-1. Go to [GitHub.com](https://github.com/new)
-2. Create a new public repository called `base-arbitrage-bot`
-3. Clone it locally (or use GitHub web editor on your phone)
+## 📊 Supported Trading Pairs
 
-### 2. Add Files to Repository
+The bot currently monitors these high-liquidity pairs:
 
-Create these three files in your repo:
+| Token Pair | DEXs Monitored |
+|------------|----------------|
+| WETH/USDC | Uniswap V2, V3, Aerodrome, PancakeSwap V3 |
+| DEGEN/USDC | Uniswap V2, V3, Aerodrome |
+| WETH/AERO | Uniswap V3, Aerodrome, PancakeSwap V3 |
+| WETH/cbBTC | Uniswap V3, Aerodrome, PancakeSwap V3 |
 
-**File 1: `detector.js`** - Copy the main detector code from the artifact
+## 🚀 Quick Start
 
-**File 2: `package.json`** - Copy from the artifact
+### Prerequisites
 
-**File 3: `.env.example`** - Copy from the artifact
+- **Node.js 16+** installed
+- **Base Chain RPC endpoint** (free from [Infura](https://infura.io), [Alchemy](https://alchemy.com), or public endpoint)
+- **Discord/Slack webhook** (optional, for alerts)
 
-**File 4: Create `.gitignore`**
+### Installation
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/silastuweik4-netizen/Arbirtrage.git
+cd Arbirtrage
 ```
-node_modules/
-.env
-.DS_Store
+
+**2. Install dependencies**
+
+```bash
+npm install
 ```
 
-### 3. Deploy to Render (Free Tier)
+**3. Configure environment**
 
-1. Go to [Render.com](https://render.com) and sign up
-2. Click **New +** → **Web Service**
-3. Connect your GitHub account and select your `base-arbitrage-bot` repo
-4. Configure:
-   - **Name**: `base-arb-bot`
-   - **Environment**: `Node`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-   - **Plan**: Free tier
+Create a `.env` file based on `.env.example`:
 
-5. Click **Advanced** and add Environment Variables:
-   ```
-   RPC_URL = https://mainnet.base.org
-   ```
+```bash
+cp .env.example .env
+```
 
-6. Deploy! Render will automatically start your bot.
+Edit `.env` with your settings:
 
-## Configuration
+```env
+RPC_URL=https://mainnet.base.org
+PRICE_DIFFERENCE_THRESHOLD=0.5
+CHECK_INTERVAL_MS=10000
+TRADE_SIZE=100
+MIN_LIQUIDITY_USD=10000
+WEBHOOK_URL=your_discord_webhook_url_here
+```
+
+**4. Run the bot**
+
+```bash
+npm start
+```
+
+## ⚙️ Configuration
 
 ### Environment Variables
 
-Edit your `.env` file (or Render environment variables):
-
-```bash
-# Required: Base Chain RPC endpoint
-RPC_URL=https://mainnet.base.org
-
-# Optional: Discord webhook for alerts
-WEBHOOK_URL=https://discord.com/api/webhooks/...
-
-# Optional: Private key for future execution
-PRIVATE_KEY=your_wallet_private_key
-```
-
-### Adjustable Parameters
-
-In `bot.js`, modify the `CONFIG` object:
-
-```javascript
-const CONFIG = {
-  MIN_LIQUIDITY_USD: 10000,           // Minimum liquidity threshold
-  PRICE_DIFFERENCE_THRESHOLD: 0.5,    // Minimum profit margin (%)
-  CHECK_INTERVAL_MS: 10000,           // Scan frequency (ms)
-};
-```
+| Variable | Description | Default | Example |
+|----------|-------------|---------|---------|
+| `RPC_URL` | Base Chain RPC endpoint | `https://mainnet.base.org` | `https://base-mainnet.infura.io/v3/YOUR_KEY` |
+| `PRICE_DIFFERENCE_THRESHOLD` | Minimum profit % to alert | `0.5` | `1.0` (for 1% minimum) |
+| `CHECK_INTERVAL_MS` | Scan frequency in milliseconds | `10000` | `5000` (5 seconds) |
+| `TRADE_SIZE` | Simulated trade size | `100` | `1000` |
+| `MIN_LIQUIDITY_USD` | Minimum pool liquidity | `10000` | `50000` |
+| `WEBHOOK_URL` | Discord/Slack webhook URL | `null` | `https://discord.com/api/webhooks/...` |
 
 ### Adding Custom Token Pairs
 
-In the bot, add custom pairs programmatically:
+Edit the `loadPairs()` method in `detector.js`:
 
 ```javascript
-const detector = new ArbitrageDetector();
-detector.pairManager.addPair(
-  '0xTokenAddress0',
-  '0xTokenAddress1',
-  'TOKEN0_NAME',
-  'TOKEN1_NAME',
-  'uniswap_v3',
-  'aerodrome'
-);
+loadPairs() {
+  this.pairs = [
+    { 
+      token0: TOKENS.WETH, 
+      token1: TOKENS.USDC, 
+      dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome', 'pancakeswap_v3'] 
+    },
+    // Add your custom pair here
+    { 
+      token0: { address: '0x...', name: 'TOKEN', decimals: 18 }, 
+      token1: TOKENS.USDC, 
+      dexes: ['uniswap_v3', 'aerodrome'] 
+    },
+  ];
+}
 ```
 
-## RPC Endpoints (Free Options)
+## 📡 RPC Endpoints
 
-- **Infura**: https://infura.io/ (free tier available)
-- **Alchemy**: https://alchemy.com/ (free tier available)
-- **Base Public RPC**: https://mainnet.base.org (rate limited)
-- **QuickNode**: https://www.quicknode.com/ (free tier available)
+### Free RPC Providers
 
-## Discord Webhook Setup
+| Provider | URL Format | Rate Limits |
+|----------|-----------|-------------|
+| **Base Public RPC** | `https://mainnet.base.org` | Rate limited |
+| **Infura** | `https://base-mainnet.infura.io/v3/YOUR_KEY` | 100k requests/day (free) |
+| **Alchemy** | `https://base-mainnet.g.alchemy.com/v2/YOUR_KEY` | 300M compute units/month (free) |
+| **QuickNode** | Custom endpoint | 10M credits/month (free) |
 
-1. Go to your Discord server → Settings → Webhooks
-2. Click **New Webhook**
-3. Copy the webhook URL
-4. Add to your `.env`:
-   ```
-   WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN
-   ```
+### Recommended Setup
 
-## How It Works
+For production use, we recommend using **Alchemy** or **Infura** instead of the public RPC to avoid rate limiting.
 
-1. **Initialization**: Loads pre-configured token pairs (WETH/USDC, USDbC/USDC, DEGEN/USDC)
-2. **Validation**: Checks that both tokens exist and have valid decimals
-3. **Price Fetching**: Queries prices from multiple DEXs simultaneously
-4. **Comparison**: Calculates price differences between DEXs
-5. **Alerting**: If difference exceeds threshold, sends webhook alert
-6. **Looping**: Repeats every 10 seconds (configurable)
+## 🔔 Discord Webhook Setup
 
-## Monitoring Output
+**1. Open Discord Server Settings**
+- Go to your Discord server
+- Click **Server Settings** → **Integrations** → **Webhooks**
 
-```
-[2024-01-18T10:32:00.000Z] Scanning 3 pairs...
-✓ WETH/USDC validation passed
-⚠ USDbC/USDC: Could not fetch prices
-🎯 OPPORTUNITY: DEGEN/USDC | Profit: 1.25% | uniswap_v3 → aerodrome
+**2. Create New Webhook**
+- Click **New Webhook**
+- Choose a channel for alerts
+- Copy the webhook URL
+
+**3. Add to .env**
+
+```env
+WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 ```
 
-## Troubleshooting
+## 📈 How It Works
+
+The bot operates in a continuous scanning loop:
+
+**1. Token Validation**
+- Validates token contracts exist and are accessible
+- Retrieves token decimals and symbols
+
+**2. Price Fetching**
+- Queries each DEX for the current swap price
+- Handles multiple fee tiers for V3 DEXs
+- Skips DEXs without liquidity for the pair
+
+**3. Arbitrage Detection**
+- Identifies the best buy price (lowest) and sell price (highest)
+- Calculates percentage profit opportunity
+- Filters by minimum threshold
+
+**4. Alert Generation**
+- Logs opportunities to console
+- Sends webhook notifications with trade details
+- Tracks historical opportunities
+
+**5. Continuous Monitoring**
+- Repeats scan every `CHECK_INTERVAL_MS`
+- Handles errors gracefully
+- Maintains connection to RPC
+
+## 📊 Sample Output
+
+```
+============================================================
+🚀 Base Chain Multi-DEX Arbitrage Bot Starting...
+============================================================
+RPC URL: https://mainnet.base.org
+Price Difference Threshold: 0.5%
+Check Interval: 10000ms
+Trade Size: 100 tokens
+Min Liquidity: $10000
+============================================================
+
+[2026-01-18T05:50:00.000Z] Scanning 4 pairs across multiple DEXs...
+
+  📊 Analyzing WETH/USDC...
+    → Fetching price from uniswap_v3...
+    ✓ uniswap_v3: 3245.50 USDC
+    → Fetching price from uniswap_v2...
+    ✓ uniswap_v2: 3242.80 USDC
+    → Fetching price from aerodrome...
+    ✓ aerodrome: 3248.20 USDC
+    → Fetching price from pancakeswap_v3...
+    ✓ pancakeswap_v3: 3246.10 USDC
+
+  🎯 ARBITRAGE OPPORTUNITY FOUND!
+     Pair: WETH/USDC
+     Buy on uniswap_v2 at 3242.80 USDC
+     Sell on aerodrome at 3248.20 USDC
+     Profit: 0.17%
+
+✓ Scan complete. Found 1 opportunities in this cycle.
+```
+
+## 🛠️ Deployment
+
+### Deploy to Render (Free Tier)
+
+**1. Push to GitHub**
+
+```bash
+git add .
+git commit -m "Update arbitrage bot"
+git push origin main
+```
+
+**2. Create Render Service**
+- Go to [render.com](https://render.com)
+- Click **New +** → **Web Service**
+- Connect your GitHub repository
+
+**3. Configure Service**
+- **Name**: `base-arbitrage-bot`
+- **Environment**: `Node`
+- **Build Command**: `npm install`
+- **Start Command**: `npm start`
+- **Plan**: Free
+
+**4. Add Environment Variables**
+
+Add all variables from your `.env` file in the Render dashboard.
+
+**5. Deploy**
+
+Click **Create Web Service** and Render will automatically deploy your bot.
+
+### Deploy to Heroku
+
+```bash
+heroku create base-arbitrage-bot
+heroku config:set RPC_URL=https://mainnet.base.org
+heroku config:set PRICE_DIFFERENCE_THRESHOLD=0.5
+git push heroku main
+```
+
+## 🔍 Troubleshooting
 
 ### "Could not fetch prices" Error
-- RPC endpoint may be rate limited
-- Token pair may not exist on that DEX
-- Check that token addresses are correct on Basescan
 
-### Bot not detecting opportunities
-- Increase `PRICE_DIFFERENCE_THRESHOLD` to see more alerts
-- Add more token pairs in `TokenPairManager`
-- Check that DEX liquidity is sufficient
+**Possible causes:**
+- RPC endpoint is rate limited → Use Alchemy or Infura
+- Pool doesn't exist on that DEX → Normal, bot will skip
+- Network connectivity issues → Check internet connection
 
-### High gas prices
-- Modify `CHECK_INTERVAL_MS` to scan less frequently
-- Use a faster RPC endpoint (Alchemy/Infura instead of public)
+### "Validation failed" Error
 
-## Next Steps
+**Possible causes:**
+- Token address is incorrect → Verify on [Basescan](https://basescan.org)
+- Token contract is not standard ERC20 → Use different token
+- RPC is not responding → Switch RPC provider
 
-### Phase 2: Add Execution
-Once detection is working, add execution logic to:
-- Calculate exact swap amounts
-- Estimate gas costs
-- Execute profitable trades
-- Track profits/losses
+### No Opportunities Found
 
-### Phase 3: Optimization
-- Add MEV protection
-- Optimize gas usage
-- Implement slippage protection
-- Add multi-pair parallel scanning
+**This is normal!** Arbitrage opportunities are rare and fleeting. To increase detection:
+- Lower `PRICE_DIFFERENCE_THRESHOLD` to `0.1` or `0.2`
+- Add more token pairs
+- Decrease `CHECK_INTERVAL_MS` to scan more frequently
+- Use faster RPC endpoint
 
-## Important Notes
+## 📋 DEX Contract Addresses (Base Mainnet)
 
-⚠️ **Never share your `.env` file or private keys**
-⚠️ **Test on testnet before using real funds**
-⚠️ **Monitor gas costs carefully** - they can exceed profits on small spreads
-⚠️ **Rate limiting** - RPC endpoints may limit requests; upgrade if needed
+### Uniswap V3
+- **QuoterV2**: `0xb27308f9f90d607463bb33ea1bebb41c27ce5ab6`
 
-## License
+### Uniswap V2
+- **Router**: `0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24`
+- **Factory**: `0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6`
 
-MIT
+### Aerodrome Finance
+- **Router**: `0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43`
+- **Factory**: `0x420DD381b31aEf6683db6B902084cB0FFECe40Da`
 
-## Support
+### PancakeSwap V3
+- **QuoterV2**: `0xbC203d7f83677c7ed3F7acEc959963E7F4ECC5C2`
+- **Smart Router**: `0x678Aa4bF4E210cf2166753e054d5b7c31cc7fa86`
+
+## 🔐 Security Notes
+
+**⚠️ IMPORTANT:**
+- **Never commit `.env` file** to GitHub
+- **Never share your private keys** (not needed for detection)
+- **Use read-only RPC endpoints** for detection
+- **Test thoroughly** before executing trades
+- **Monitor gas costs** - they can exceed profits
+
+## 🚧 Future Enhancements
+
+**Phase 2: Trade Execution**
+- Automatic trade execution with flash loans
+- Gas cost estimation and profitability calculation
+- MEV protection and private transaction submission
+
+**Phase 3: Advanced Features**
+- Machine learning for opportunity prediction
+- Multi-hop arbitrage routes
+- Cross-chain arbitrage detection
+- Real-time profitability dashboard
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📞 Support
 
 For issues or questions:
 1. Check the troubleshooting section
-2. Review Render logs: Dashboard → Your App → Logs
-3. Test RPC connection: Use Basescan or a simple curl command
+2. Review Basescan for contract addresses
+3. Test RPC connection with `curl`
+4. Open an issue on GitHub
+
+## 🔗 Useful Links
+
+- [Base Chain Documentation](https://docs.base.org)
+- [Uniswap V3 Docs](https://docs.uniswap.org/contracts/v3/overview)
+- [Aerodrome Finance](https://aerodrome.finance)
+- [PancakeSwap Docs](https://docs.pancakeswap.finance)
+- [Basescan Explorer](https://basescan.org)
+
+---
+
+**Built with ❤️ for the Base Chain DeFi community**
