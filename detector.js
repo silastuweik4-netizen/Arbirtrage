@@ -52,52 +52,55 @@ const TOKENS = {
   DEGEN: { address: '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed', name: 'DEGEN', decimals: 18 },
   BRETT: { address: '0x532f27101965dd16442E59d40670FaF5eBB142E4', name: 'BRETT', decimals: 18 },
   VIRTUAL: { address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', name: 'VIRTUAL', decimals: 18 },
+  SOL: { address: '0x311935Cd80B76769bF2ecC9D8Ab7635b2139cf82', name: 'SOL', decimals: 18 },
   wstETH: { address: '0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452', name: 'wstETH', decimals: 18 },
   weETH: { address: '0x04c0599ae5a44757c0af6f9ec3b93da8976c150a', name: 'weETH', decimals: 18 },
   USDS: { address: '0x820c137fa70c8691f0e44dc420a5e53c168921dc', name: 'USDS', decimals: 18 },
+  USDe: { address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34', name: 'USDe', decimals: 18 },
   sUSDS: { address: '0x5875eee11cf8398102fdad704c9e96607675467a', name: 'sUSDS', decimals: 18 },
+  sUSDC: { address: '0x3128a0f7f0ea68e7b7c9b00afa7e41045828e858', name: 'sUSDC', decimals: 6 },
+  sUSDe: { address: '0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2', name: 'sUSDe', decimals: 18 },
   DOT: { address: '0x8d010bf9c26881788b4e6bf5fd1bdc358c8f90b8', name: 'DOT', decimals: 18 },
   AAVE: { address: '0x63706e401c06ac8513145b7687a14804d17f814b', name: 'AAVE', decimals: 18 },
   ENA: { address: '0x58538e6A46E07434d7E7375Bc268D3cb839C0133', name: 'ENA', decimals: 18 },
   rETH: { address: '0xb6fe221fe9eef5aba221c348ba20a1bf5e73624c', name: 'rETH', decimals: 18 },
+  syrupUSDC: { address: '0x660975730059246a68521a3e2fbd4740173100f5', name: 'syrupUSDC', decimals: 18 },
   TRUMP: { address: '0xc27468b12ffa6d714b1b5fbc87ef403f38b82ad4', name: 'TRUMP', decimals: 18 },
+  LBTC: { address: '0xecac9c5f704e954931349da37f60e39f515c11c1', name: 'LBTC', decimals: 8 },
+  SolvBTC: { address: '0x3b86ad95859b6ab773f55f8d94b4b9d443ee931f', name: 'SolvBTC', decimals: 18 },
   LsETH: { address: '0xb29749498954a3a821ec37bde86e386df3ce30b6', name: 'LsETH', decimals: 18 },
   MORPHO: { address: '0xBAa5CC21fd487B8Fcc2F632f3F4E8D37262a0842', name: 'MORPHO', decimals: 18 },
   ezETH: { address: '0x2416092f143378750bb29b79ed961ab195cceea5', name: 'ezETH', decimals: 18 },
   CRV: { address: '0x8Ee73c484A26e0A5df2Ee2a4960B789967dd0415', name: 'CRV', decimals: 18 },
+  LINK: { address: '0x88Fb150BD486054367873f449caC4489Ba0E6569', name: 'LINK', decimals: 18 },
+  LDO: { address: '0x76887793387768521a3e2fbd4740173100f5', name: 'LDO', decimals: 18 },
 };
 
-// ==================== VERIFIED ACTIONABLE PAIRS ====================
-const VERIFIED_PAIRS = [
-  { t0: TOKENS.WETH, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.WETH, t1: TOKENS.USDT, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.WETH, t1: TOKENS.DAI, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.cbBTC, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.WBTC, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.AERO, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.DEGEN, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.DEGEN, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.BRETT, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.BRETT, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.VIRTUAL, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.VIRTUAL, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.wstETH, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.wstETH, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.weETH, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.weETH, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.USDS, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2'] },
-  { t0: TOKENS.sUSDS, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.DOT, t1: TOKENS.WETH, dexes: ['uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.AAVE, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.ENA, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.rETH, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.TRUMP, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.LsETH, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.MORPHO, t1: TOKENS.WETH, dexes: ['uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.MORPHO, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'aerodrome'] },
-  { t0: TOKENS.ezETH, t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-  { t0: TOKENS.CRV, t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] },
-];
+// ==================== DYNAMIC PAIR GENERATION ====================
+function generatePairs() {
+  const pairs = [];
+  const tokenList = Object.keys(TOKENS);
+  const stablecoins = ['USDC', 'USDT', 'DAI'];
+  const majorTokens = ['WETH', 'cbBTC', 'WBTC', 'AERO'];
+  
+  // Major tokens vs Stablecoins
+  for (const tName of majorTokens) {
+    for (const sName of stablecoins) {
+      pairs.push({ t0: TOKENS[tName], t1: TOKENS[sName], dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+    }
+  }
+  
+  // Other tokens vs WETH and USDC
+  const otherTokens = tokenList.filter(t => !majorTokens.includes(t) && !stablecoins.includes(t));
+  for (const tName of otherTokens) {
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+  }
+  
+  return pairs;
+}
+
+const VERIFIED_PAIRS = generatePairs();
 
 // ==================== PRICE & LIQUIDITY FETCHER ====================
 class PriceFetcher {
@@ -128,7 +131,6 @@ class PriceFetcher {
       const t0Contract = new ethers.Contract(token0.address, ERC20_ABI, provider);
       const bal0 = await t0Contract.balanceOf(poolAddress);
 
-      // Simple heuristic: we return the raw balance of token0 as a proxy for liquidity
       return parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
     } catch (e) { return 0; }
   }
@@ -160,11 +162,7 @@ class ArbitrageDetector {
   async getSpreadData(pair) {
     const priceData = {};
     for (const dex of pair.dexes) {
-      // Step A: Fetch liquidity
       const liquidity = await this.prices.getLiquidity(pair.t0, pair.t1, dex);
-      
-      // Step B: Calculate spread only if liquidity is present
-      // Note: In a production environment, you'd convert liquidity to USD here.
       if (liquidity > 0) {
         const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
         if (price && price.gt(0)) priceData[dex] = price;
@@ -191,24 +189,17 @@ class ArbitrageDetector {
   }
 
   async scan() {
-    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} verified actionable pairs...`);
+    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} dynamically generated pairs...`);
     let opportunitiesFound = 0;
 
     for (const pair of VERIFIED_PAIRS) {
-      // SEQUENCE: Fetch liquidity -> Calculate spread -> Fetch again -> Recalculate spread
-      
-      // 1. First Check: Fetch liquidity and calculate spread
       const firstCheck = await this.getSpreadData(pair);
       if (!firstCheck || firstCheck.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
 
       console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}%). Double checking...`);
-      
-      // Small delay to ensure we're not just hitting a transient state
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 2. Second Check: Fetch liquidity again and recalculate spread
       const secondCheck = await this.getSpreadData(pair);
-      
       if (secondCheck && secondCheck.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
         opportunitiesFound++;
         const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
@@ -233,7 +224,7 @@ async function main() {
   http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
-    res.end('Arbitrage Bot is running with Sequential Double-Check Logic!\n');
+    res.end('Arbitrage Bot is running with Dynamic Pairs and Double-Check Logic!\n');
   }).listen(port, () => console.log(`Health check server running on port ${port}`));
 }
 
