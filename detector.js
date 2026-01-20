@@ -10,7 +10,9 @@ const CONFIG = {
   CHECK_INTERVAL_MS: parseInt(process.env.CHECK_INTERVAL_MS) || 10000,
   WEBHOOK_URL: process.env.WEBHOOK_URL || null,
   TRADE_SIZE: process.env.TRADE_SIZE || '1',
-  MIN_LIQUIDITY_USD: 5000, // Minimum liquidity in USD to consider a pool "active"
+  MIN_LIQUIDITY_USD: 5000, // STRICT THRESHOLD: $5000
+  GAS_PRICE_GWEI: '0.1', // Estimated gas price on Base
+  ESTIMATED_GAS_USAGE: 300000, // Estimated gas for a swap
 };
 
 // ==================== PROVIDER ====================
@@ -38,17 +40,19 @@ const DEX_ADDRESSES = {
   PANCAKESWAP_V3_QUOTER: '0xbC203d7f83677c7ed3F7acEc959963E7F4ECC5C2',
   UNISWAP_V3_FACTORY: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
   UNISWAP_V2_FACTORY: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
+  SQUADSWAP_ROUTER: '0xf48d22968e87c52743F9052d8E608eCd41fAcAcC', // SquadSwap SmartRouter on Base
+  COW_API_URL: 'https://api.cow.fi/base/api/v1', // CoW Swap API for Base
 };
 
 // ==================== VERIFIED TOKENS ====================
 const TOKENS = {
-  WETH: { address: '0x4200000000000000000000000000000000000006', name: 'WETH', decimals: 18 },
-  USDC: { address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', name: 'USDC', decimals: 6 },
-  USDT: { address: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2', name: 'USDT', decimals: 6 },
-  DAI: { address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', name: 'DAI', decimals: 18 },
-  cbBTC: { address: '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', name: 'cbBTC', decimals: 8 },
-  WBTC: { address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', name: 'WBTC', decimals: 8 },
-  AERO: { address: '0x940181a94A35A4569E4529A3CDfB74e38FD98631', name: 'AERO', decimals: 18 },
+  WETH: { address: '0x4200000000000000000000000000000000000006', name: 'WETH', decimals: 18, isMajor: true },
+  USDC: { address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', name: 'USDC', decimals: 6, isStable: true },
+  USDT: { address: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2', name: 'USDT', decimals: 6, isStable: true },
+  DAI: { address: '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', name: 'DAI', decimals: 18, isStable: true },
+  cbBTC: { address: '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf', name: 'cbBTC', decimals: 8, isMajor: true },
+  WBTC: { address: '0x0555E30da8f98308EdB960aa94C0Db47230d2B9c', name: 'WBTC', decimals: 8, isMajor: true },
+  AERO: { address: '0x940181a94A35A4569E4529A3CDfB74e38FD98631', name: 'AERO', decimals: 18, isMajor: true },
   DEGEN: { address: '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed', name: 'DEGEN', decimals: 18 },
   BRETT: { address: '0x532f27101965dd16442E59d40670FaF5eBB142E4', name: 'BRETT', decimals: 18 },
   VIRTUAL: { address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', name: 'VIRTUAL', decimals: 18 },
@@ -80,21 +84,19 @@ const TOKENS = {
 function generatePairs() {
   const pairs = [];
   const tokenList = Object.keys(TOKENS);
-  const stablecoins = ['USDC', 'USDT', 'DAI'];
-  const majorTokens = ['WETH', 'cbBTC', 'WBTC', 'AERO'];
+  const stablecoins = tokenList.filter(t => TOKENS[t].isStable);
+  const majorTokens = tokenList.filter(t => TOKENS[t].isMajor);
   
-  // Major tokens vs Stablecoins
   for (const tName of majorTokens) {
     for (const sName of stablecoins) {
-      pairs.push({ t0: TOKENS[tName], t1: TOKENS[sName], dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+      pairs.push({ t0: TOKENS[tName], t1: TOKENS[sName], dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome', 'squadswap', 'cowswap'] });
     }
   }
   
-  // Other tokens vs WETH and USDC
-  const otherTokens = tokenList.filter(t => !majorTokens.includes(t) && !stablecoins.includes(t));
+  const otherTokens = tokenList.filter(t => !TOKENS[t].isMajor && !TOKENS[t].isStable);
   for (const tName of otherTokens) {
-    pairs.push({ t0: TOKENS[tName], t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
-    pairs.push({ t0: TOKENS[tName], t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome', 'squadswap', 'cowswap'] });
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome', 'squadswap', 'cowswap'] });
   }
   
   return pairs;
@@ -108,30 +110,55 @@ class PriceFetcher {
     this.quoterV3 = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V3_QUOTER, UNISWAP_V3_QUOTER_ABI, provider);
     this.routerV2 = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V2_ROUTER, UNISWAP_V2_ROUTER_ABI, provider);
     this.aerodromeRouter = new ethers.Contract(DEX_ADDRESSES.AERODROME_ROUTER, AERODROME_ROUTER_ABI, provider);
-    this.pancakeQuoterV3 = new ethers.Contract(DEX_ADDRESSES.PANCAKESWAP_V3_QUOTER, UNISWAP_V3_QUOTER_ABI, provider);
+    this.squadRouter = new ethers.Contract(DEX_ADDRESSES.SQUADSWAP_ROUTER, UNISWAP_V2_ROUTER_ABI, provider); // SquadSwap uses V2-like router
     
     this.v3Factory = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V3_FACTORY, UNISWAP_V3_FACTORY_ABI, provider);
     this.v2Factory = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V2_FACTORY, UNISWAP_V2_FACTORY_ABI, provider);
     this.aeroFactory = new ethers.Contract(DEX_ADDRESSES.AERODROME_FACTORY, AERODROME_FACTORY_ABI, provider);
+    
+    this.ethPrice = 2500; // Default fallback
   }
 
-  async getLiquidity(token0, token1, dexType) {
+  async updateEthPrice() {
+    try {
+      const amountIn = ethers.utils.parseUnits('1', 18);
+      const amountOut = await this.routerV2.getAmountsOut(amountIn, [TOKENS.WETH.address, TOKENS.USDC.address]);
+      this.ethPrice = parseFloat(ethers.utils.formatUnits(amountOut[1], 6));
+    } catch (e) {}
+  }
+
+  async getLiquidityUSD(token0, token1, dexType) {
     try {
       let poolAddress = ethers.constants.AddressZero;
       if (dexType === 'uniswap_v3') {
         poolAddress = await this.v3Factory.getPool(token0.address, token1.address, 500);
-      } else if (dexType === 'uniswap_v2') {
+      } else if (dexType === 'uniswap_v2' || dexType === 'squadswap') {
         poolAddress = await this.v2Factory.getPair(token0.address, token1.address);
       } else if (dexType === 'aerodrome') {
         poolAddress = await this.aeroFactory.getPool(token0.address, token1.address, false);
+      } else if (dexType === 'cowswap') {
+        return 1000000; // CoW Swap is an aggregator, assume high liquidity
       }
 
       if (poolAddress === ethers.constants.AddressZero) return 0;
 
       const t0Contract = new ethers.Contract(token0.address, ERC20_ABI, provider);
-      const bal0 = await t0Contract.balanceOf(poolAddress);
+      const t1Contract = new ethers.Contract(token1.address, ERC20_ABI, provider);
+      
+      const [bal0, bal1] = await Promise.all([
+        t0Contract.balanceOf(poolAddress),
+        t1Contract.balanceOf(poolAddress)
+      ]);
 
-      return parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
+      const val0 = parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
+      const val1 = parseFloat(ethers.utils.formatUnits(bal1, token1.decimals));
+
+      if (token0.isStable) return val0 * 2;
+      if (token1.isStable) return val1 * 2;
+      if (token0.name === 'WETH') return val0 * this.ethPrice * 2;
+      if (token1.name === 'WETH') return val1 * this.ethPrice * 2;
+      
+      return 0;
     } catch (e) { return 0; }
   }
 
@@ -147,6 +174,14 @@ class PriceFetcher {
         const routes = [{ from: token0.address, to: token1.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }];
         const amounts = await this.aerodromeRouter.getAmountsOut(amountIn, routes);
         return amounts[1];
+      } else if (dexType === 'squadswap') {
+        const amounts = await this.squadRouter.getAmountsOut(amountIn, [token0.address, token1.address]);
+        return amounts[1];
+      } else if (dexType === 'cowswap') {
+        const response = await axios.get(`${DEX_ADDRESSES.COW_API_URL}/quote`, {
+          params: { sellToken: token0.address, buyToken: token1.address, sellAmountBeforeFee: amountIn.toString() }
+        });
+        return ethers.BigNumber.from(response.data.quote.buyAmount);
       }
     } catch (e) { return null; }
     return null;
@@ -162,8 +197,8 @@ class ArbitrageDetector {
   async getSpreadData(pair) {
     const priceData = {};
     for (const dex of pair.dexes) {
-      const liquidity = await this.prices.getLiquidity(pair.t0, pair.t1, dex);
-      if (liquidity > 0) {
+      const liquidityUSD = await this.prices.getLiquidityUSD(pair.t0, pair.t1, dex);
+      if (liquidityUSD >= CONFIG.MIN_LIQUIDITY_USD) {
         const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
         if (price && price.gt(0)) priceData[dex] = price;
       }
@@ -183,30 +218,44 @@ class ArbitrageDetector {
 
     const pBuy = parseFloat(ethers.utils.formatUnits(bestBuyPrice, pair.t1.decimals));
     const pSell = parseFloat(ethers.utils.formatUnits(bestSellPrice, pair.t1.decimals));
-    const diff = ((pBuy - pSell) / pSell) * 100;
+    
+    // DEDUCT FEES (0.3% average DEX fee + estimated gas)
+    const dexFee = 0.003 * 2; // 0.3% for buy, 0.3% for sell
+    const gasCostUSD = (parseFloat(CONFIG.GAS_PRICE_GWEI) * CONFIG.ESTIMATED_GAS_USAGE) / 1e9 * this.prices.ethPrice;
+    
+    // Convert gas cost to t1 units
+    let gasCostInT1 = 0;
+    if (pair.t1.isStable) {
+      gasCostInT1 = gasCostUSD;
+    } else if (pair.t1.name === 'WETH') {
+      gasCostInT1 = gasCostUSD / this.prices.ethPrice;
+    }
 
-    return { diff, bestBuyDex, bestSellDex, pBuy, pSell };
+    const grossProfit = pBuy - pSell;
+    const netProfit = grossProfit - (pBuy * dexFee) - gasCostInT1;
+    const diff = (netProfit / pSell) * 100;
+
+    return { diff, bestBuyDex, bestSellDex, pBuy, pSell, netProfit };
   }
 
   async scan() {
-    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} dynamically generated pairs...`);
+    await this.prices.updateEthPrice();
+    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} pairs with SquadSwap & CoW Swap...`);
     let opportunitiesFound = 0;
 
     for (const pair of VERIFIED_PAIRS) {
       const firstCheck = await this.getSpreadData(pair);
       if (!firstCheck || firstCheck.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
 
-      console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}%). Double checking...`);
+      console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}% NET). Double checking...`);
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const secondCheck = await this.getSpreadData(pair);
       if (secondCheck && secondCheck.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
         opportunitiesFound++;
-        const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
+        const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Net Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
         console.log(msg);
         if (CONFIG.WEBHOOK_URL) axios.post(CONFIG.WEBHOOK_URL, { content: msg }).catch(() => {});
-      } else {
-        console.log(`❌ Opportunity for ${pair.t0.name}/${pair.t1.name} failed double-check.`);
       }
     }
     console.log(`✓ Scan complete. Found ${opportunitiesFound} verified actionable opportunities.`);
@@ -224,7 +273,7 @@ async function main() {
   http.createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/plain');
-    res.end('Arbitrage Bot is running with Dynamic Pairs and Double-Check Logic!\n');
+    res.end('Arbitrage Bot is running with SquadSwap, CoW Swap, and Net Profit Calculation!\n');
   }).listen(port, () => console.log(`Health check server running on port ${port}`));
 }
 
