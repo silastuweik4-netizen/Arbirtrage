@@ -1,6 +1,15 @@
 const { ethers } = require('ethers');
 const axios = require('axios');
+const http = require('http');
 require('dotenv').config();
+
+// ==================== HEALTH CHECK SERVER (START IMMEDIATELY) ====================
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('Arbitrage Bot is running!\n');
+}).listen(port, () => console.log(`[SYSTEM] Health check server active on port ${port}`));
 
 // ==================== CONFIGURATION ====================
 const CONFIG = {
@@ -10,7 +19,7 @@ const CONFIG = {
   CHECK_INTERVAL_MS: parseInt(process.env.CHECK_INTERVAL_MS) || 10000,
   WEBHOOK_URL: process.env.WEBHOOK_URL || null,
   TRADE_SIZE: process.env.TRADE_SIZE || '1',
-  MIN_LIQUIDITY_USD: parseFloat(process.env.MIN_LIQUIDITY_USD) || 0, // Managed via Render Env
+  CONCURRENCY_LIMIT: 5, // Scan 5 pairs in parallel to increase speed
   GAS_PRICE_GWEI: '0.1', 
   ESTIMATED_GAS_USAGE: 300000,
 };
@@ -19,17 +28,10 @@ const CONFIG = {
 const provider = new ethers.providers.JsonRpcProvider(CONFIG.RPC_URL);
 
 // ==================== ABIS ====================
-const ERC20_ABI = [
-  'function decimals() view returns (uint8)',
-  'function balanceOf(address) view returns (uint256)'
-];
+const ERC20_ABI = ['function decimals() view returns (uint8)', 'function balanceOf(address) view returns (uint256)'];
 const UNISWAP_V3_QUOTER_ABI = ['function quoteExactInputSingle(address,address,uint24,uint256,uint160) external view returns (uint256)'];
 const UNISWAP_V2_ROUTER_ABI = ['function getAmountsOut(uint,address[]) view returns (uint[])'];
 const AERODROME_ROUTER_ABI = ['function getAmountsOut(uint256,tuple(address from,address to,bool stable,address factory)[]) view returns (uint256[])'];
-
-const UNISWAP_V3_FACTORY_ABI = ['function getPool(address,address,uint24) view returns (address)'];
-const UNISWAP_V2_FACTORY_ABI = ['function getPair(address,address) view returns (address)'];
-const AERODROME_FACTORY_ABI = ['function getPool(address,address,bool) view returns (address)'];
 
 // ==================== DEX ADDRESSES ====================
 const DEX_ADDRESSES = {
@@ -37,9 +39,6 @@ const DEX_ADDRESSES = {
   UNISWAP_V2_ROUTER: '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24',
   AERODROME_ROUTER: '0xcF77a3Ba9A5CA399B7c97c74d54e5b1Beb874E43',
   AERODROME_FACTORY: '0x420DD381b31aEf6683db6B902084cB0FFECe40Da',
-  PANCAKESWAP_V3_QUOTER: '0xbC203d7f83677c7ed3F7acEc959963E7F4ECC5C2',
-  UNISWAP_V3_FACTORY: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
-  UNISWAP_V2_FACTORY: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
   SQUADSWAP_ROUTER: '0xf48d22968e87c52743F9052d8E608eCd41fAcAcC',
   COW_API_URL: 'https://api.cow.fi/base/api/v1',
 };
@@ -111,7 +110,6 @@ class PriceFetcher {
     this.routerV2 = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V2_ROUTER, UNISWAP_V2_ROUTER_ABI, provider);
     this.aerodromeRouter = new ethers.Contract(DEX_ADDRESSES.AERODROME_ROUTER, AERODROME_ROUTER_ABI, provider);
     this.squadRouter = new ethers.Contract(DEX_ADDRESSES.SQUADSWAP_ROUTER, UNISWAP_V2_ROUTER_ABI, provider);
-    
     this.ethPrice = 2500; 
   }
 
@@ -140,7 +138,8 @@ class PriceFetcher {
         return amounts[1];
       } else if (dexType === 'cowswap') {
         const response = await axios.get(`${DEX_ADDRESSES.COW_API_URL}/quote`, {
-          params: { sellToken: token0.address, buyToken: token1.address, sellAmountBeforeFee: amountIn.toString() }
+          params: { sellToken: token0.address, buyToken: token1.address, sellAmountBeforeFee: amountIn.toString() },
+          timeout: 5000
         });
         return ethers.BigNumber.from(response.data.quote.buyAmount);
       }
@@ -155,15 +154,17 @@ class ArbitrageDetector {
     this.prices = new PriceFetcher();
   }
 
-  async getSpreadData(pair) {
+  async processPair(pair) {
     const priceData = {};
-    for (const dex of pair.dexes) {
+    // Fetch prices for all DEXs in parallel for this pair
+    const pricePromises = pair.dexes.map(async (dex) => {
       const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
       if (price && price.gt(0)) priceData[dex] = price;
-    }
+    });
+    await Promise.all(pricePromises);
 
     const dexNames = Object.keys(priceData);
-    if (dexNames.length < 2) return null;
+    if (dexNames.length < 2) return;
 
     let bestBuyDex = null, bestBuyPrice = ethers.BigNumber.from(0);
     let bestSellDex = null, bestSellPrice = ethers.constants.MaxUint256;
@@ -191,30 +192,59 @@ class ArbitrageDetector {
     const netProfit = grossProfit - (pBuy * dexFee) - gasCostInT1;
     const diff = (netProfit / pSell) * 100;
 
-    return { diff, bestBuyDex, bestSellDex, pBuy, pSell, netProfit };
-  }
-
-  async scan() {
-    await this.prices.updateEthPrice();
-    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} pairs with SquadSwap & CoW Swap...`);
-    let opportunitiesFound = 0;
-
-    for (const pair of VERIFIED_PAIRS) {
-      const firstCheck = await this.getSpreadData(pair);
-      if (!firstCheck || firstCheck.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
-
-      console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}% NET). Double checking...`);
+    if (diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
+      console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${diff.toFixed(2)}% NET). Double checking...`);
       await new Promise(resolve => setTimeout(resolve, 500));
-
+      
+      // Re-check (Sequential for safety)
       const secondCheck = await this.getSpreadData(pair);
       if (secondCheck && secondCheck.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
-        opportunitiesFound++;
         const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Net Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
         console.log(msg);
         if (CONFIG.WEBHOOK_URL) axios.post(CONFIG.WEBHOOK_URL, { content: msg }).catch(() => {});
       }
     }
-    console.log(`✓ Scan complete. Found ${opportunitiesFound} verified actionable opportunities.`);
+  }
+
+  // Helper for double-check
+  async getSpreadData(pair) {
+    const priceData = {};
+    for (const dex of pair.dexes) {
+      const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
+      if (price && price.gt(0)) priceData[dex] = price;
+    }
+    const dexNames = Object.keys(priceData);
+    if (dexNames.length < 2) return null;
+    let bestBuyDex = null, bestBuyPrice = ethers.BigNumber.from(0);
+    let bestSellDex = null, bestSellPrice = ethers.constants.MaxUint256;
+    for (const dex of dexNames) {
+      const price = priceData[dex];
+      if (price.gt(bestBuyPrice)) { bestBuyPrice = price; bestBuyDex = dex; }
+      if (price.lt(bestSellPrice)) { bestSellPrice = price; bestSellDex = dex; }
+    }
+    const pBuy = parseFloat(ethers.utils.formatUnits(bestBuyPrice, pair.t1.decimals));
+    const pSell = parseFloat(ethers.utils.formatUnits(bestSellPrice, pair.t1.decimals));
+    const dexFee = 0.003 * 2; 
+    const gasCostUSD = (parseFloat(CONFIG.GAS_PRICE_GWEI) * CONFIG.ESTIMATED_GAS_USAGE) / 1e9 * this.prices.ethPrice;
+    let gasCostInT1 = 0;
+    if (pair.t1.isStable) gasCostInT1 = gasCostUSD;
+    else if (pair.t1.name === 'WETH') gasCostInT1 = gasCostUSD / this.prices.ethPrice;
+    const netProfit = (pBuy - pSell) - (pBuy * dexFee) - gasCostInT1;
+    const diff = (netProfit / pSell) * 100;
+    return { diff, bestBuyDex, bestSellDex };
+  }
+
+  async scan() {
+    await this.prices.updateEthPrice();
+    console.log(`\n[${new Date().toISOString()}] Starting Parallel Scan of ${VERIFIED_PAIRS.length} pairs...`);
+    
+    // Process pairs in chunks to avoid RPC rate limits while maintaining speed
+    for (let i = 0; i < VERIFIED_PAIRS.length; i += CONFIG.CONCURRENCY_LIMIT) {
+      const chunk = VERIFIED_PAIRS.slice(i, i + CONFIG.CONCURRENCY_LIMIT);
+      await Promise.all(chunk.map(pair => this.processPair(pair)));
+    }
+    
+    console.log(`✓ Scan complete.`);
   }
 }
 
@@ -223,14 +253,6 @@ async function main() {
   const detector = new ArbitrageDetector();
   await detector.scan();
   setInterval(() => detector.scan(), CONFIG.CHECK_INTERVAL_MS);
-
-  const http = require('http');
-  const port = process.env.PORT || 3000;
-  http.createServer((req, res) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('Arbitrage Bot is running with SquadSwap, CoW Swap, and Net Profit Calculation!\n');
-  }).listen(port, () => console.log(`Health check server running on port ${port}`));
 }
 
 main().catch(err => {
