@@ -10,9 +10,9 @@ const CONFIG = {
   CHECK_INTERVAL_MS: parseInt(process.env.CHECK_INTERVAL_MS) || 10000,
   WEBHOOK_URL: process.env.WEBHOOK_URL || null,
   TRADE_SIZE: process.env.TRADE_SIZE || '1',
-  MIN_LIQUIDITY_USD: 5000, // STRICT THRESHOLD: $5000
-  GAS_PRICE_GWEI: '0.1', // Estimated gas price on Base
-  ESTIMATED_GAS_USAGE: 300000, // Estimated gas for a swap
+  MIN_LIQUIDITY_USD: parseFloat(process.env.MIN_LIQUIDITY_USD) || 0, // Managed via Render Env
+  GAS_PRICE_GWEI: '0.1', 
+  ESTIMATED_GAS_USAGE: 300000,
 };
 
 // ==================== PROVIDER ====================
@@ -40,8 +40,8 @@ const DEX_ADDRESSES = {
   PANCAKESWAP_V3_QUOTER: '0xbC203d7f83677c7ed3F7acEc959963E7F4ECC5C2',
   UNISWAP_V3_FACTORY: '0x33128a8fC17869897dcE68Ed026d694621f6FDfD',
   UNISWAP_V2_FACTORY: '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6',
-  SQUADSWAP_ROUTER: '0xf48d22968e87c52743F9052d8E608eCd41fAcAcC', // SquadSwap SmartRouter on Base
-  COW_API_URL: 'https://api.cow.fi/base/api/v1', // CoW Swap API for Base
+  SQUADSWAP_ROUTER: '0xf48d22968e87c52743F9052d8E608eCd41fAcAcC',
+  COW_API_URL: 'https://api.cow.fi/base/api/v1',
 };
 
 // ==================== VERIFIED TOKENS ====================
@@ -104,19 +104,15 @@ function generatePairs() {
 
 const VERIFIED_PAIRS = generatePairs();
 
-// ==================== PRICE & LIQUIDITY FETCHER ====================
+// ==================== PRICE FETCHER ====================
 class PriceFetcher {
   constructor() {
     this.quoterV3 = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V3_QUOTER, UNISWAP_V3_QUOTER_ABI, provider);
     this.routerV2 = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V2_ROUTER, UNISWAP_V2_ROUTER_ABI, provider);
     this.aerodromeRouter = new ethers.Contract(DEX_ADDRESSES.AERODROME_ROUTER, AERODROME_ROUTER_ABI, provider);
-    this.squadRouter = new ethers.Contract(DEX_ADDRESSES.SQUADSWAP_ROUTER, UNISWAP_V2_ROUTER_ABI, provider); // SquadSwap uses V2-like router
+    this.squadRouter = new ethers.Contract(DEX_ADDRESSES.SQUADSWAP_ROUTER, UNISWAP_V2_ROUTER_ABI, provider);
     
-    this.v3Factory = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V3_FACTORY, UNISWAP_V3_FACTORY_ABI, provider);
-    this.v2Factory = new ethers.Contract(DEX_ADDRESSES.UNISWAP_V2_FACTORY, UNISWAP_V2_FACTORY_ABI, provider);
-    this.aeroFactory = new ethers.Contract(DEX_ADDRESSES.AERODROME_FACTORY, AERODROME_FACTORY_ABI, provider);
-    
-    this.ethPrice = 2500; // Default fallback
+    this.ethPrice = 2500; 
   }
 
   async updateEthPrice() {
@@ -125,41 +121,6 @@ class PriceFetcher {
       const amountOut = await this.routerV2.getAmountsOut(amountIn, [TOKENS.WETH.address, TOKENS.USDC.address]);
       this.ethPrice = parseFloat(ethers.utils.formatUnits(amountOut[1], 6));
     } catch (e) {}
-  }
-
-  async getLiquidityUSD(token0, token1, dexType) {
-    try {
-      let poolAddress = ethers.constants.AddressZero;
-      if (dexType === 'uniswap_v3') {
-        poolAddress = await this.v3Factory.getPool(token0.address, token1.address, 500);
-      } else if (dexType === 'uniswap_v2' || dexType === 'squadswap') {
-        poolAddress = await this.v2Factory.getPair(token0.address, token1.address);
-      } else if (dexType === 'aerodrome') {
-        poolAddress = await this.aeroFactory.getPool(token0.address, token1.address, false);
-      } else if (dexType === 'cowswap') {
-        return 1000000; // CoW Swap is an aggregator, assume high liquidity
-      }
-
-      if (poolAddress === ethers.constants.AddressZero) return 0;
-
-      const t0Contract = new ethers.Contract(token0.address, ERC20_ABI, provider);
-      const t1Contract = new ethers.Contract(token1.address, ERC20_ABI, provider);
-      
-      const [bal0, bal1] = await Promise.all([
-        t0Contract.balanceOf(poolAddress),
-        t1Contract.balanceOf(poolAddress)
-      ]);
-
-      const val0 = parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
-      const val1 = parseFloat(ethers.utils.formatUnits(bal1, token1.decimals));
-
-      if (token0.isStable) return val0 * 2;
-      if (token1.isStable) return val1 * 2;
-      if (token0.name === 'WETH') return val0 * this.ethPrice * 2;
-      if (token1.name === 'WETH') return val1 * this.ethPrice * 2;
-      
-      return 0;
-    } catch (e) { return 0; }
   }
 
   async getPrice(token0, token1, dexType, tradeSize) {
@@ -197,11 +158,8 @@ class ArbitrageDetector {
   async getSpreadData(pair) {
     const priceData = {};
     for (const dex of pair.dexes) {
-      const liquidityUSD = await this.prices.getLiquidityUSD(pair.t0, pair.t1, dex);
-      if (liquidityUSD >= CONFIG.MIN_LIQUIDITY_USD) {
-        const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
-        if (price && price.gt(0)) priceData[dex] = price;
-      }
+      const price = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
+      if (price && price.gt(0)) priceData[dex] = price;
     }
 
     const dexNames = Object.keys(priceData);
@@ -219,11 +177,9 @@ class ArbitrageDetector {
     const pBuy = parseFloat(ethers.utils.formatUnits(bestBuyPrice, pair.t1.decimals));
     const pSell = parseFloat(ethers.utils.formatUnits(bestSellPrice, pair.t1.decimals));
     
-    // DEDUCT FEES (0.3% average DEX fee + estimated gas)
-    const dexFee = 0.003 * 2; // 0.3% for buy, 0.3% for sell
+    const dexFee = 0.003 * 2; 
     const gasCostUSD = (parseFloat(CONFIG.GAS_PRICE_GWEI) * CONFIG.ESTIMATED_GAS_USAGE) / 1e9 * this.prices.ethPrice;
     
-    // Convert gas cost to t1 units
     let gasCostInT1 = 0;
     if (pair.t1.isStable) {
       gasCostInT1 = gasCostUSD;
