@@ -2,8 +2,21 @@
 const { ethers } = require("ethers");
 require("dotenv").config();
 
-const RPC_URL = process.env.RPC_URL || "https://base.llamarpc.com";
-const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+const RPC_URL = process.env.RPC_URL || "https://mainnet.base.org";
+const provider = new ethers.providers.StaticJsonRpcProvider(RPC_URL);
+
+async function withRetry(fn, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            if (e.message.includes("429") || e.message.includes("rate limit")) {
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            } else throw e;
+        }
+    }
+}
 
 const FACTORIES = {
     UNISWAP_V2: {
@@ -43,19 +56,20 @@ async function crawlFactories(limitPerFactory = 100) {
     for (const [name, config] of Object.entries(FACTORIES)) {
         try {
             const factory = new ethers.Contract(config.address, config.abi, provider);
-            const length = await (name === "UNISWAP_V2" ? factory.allPairsLength() : factory.allPoolsLength());
+            const length = await withRetry(() => (name === "UNISWAP_V2" ? factory.allPairsLength() : factory.allPoolsLength()));
             
             console.log(`📊 ${name} has ${length.toString()} total pools. Crawling latest ${Math.min(length, limitPerFactory)}...`);
 
             const start = length.gt(limitPerFactory) ? length.sub(limitPerFactory) : ethers.BigNumber.from(0);
             
             for (let i = length.toNumber() - 1; i >= start.toNumber(); i--) {
-                const poolAddress = await (name === "UNISWAP_V2" ? factory.allPairs(i) : factory.allPools(i));
+                const poolAddress = await withRetry(() => (name === "UNISWAP_V2" ? factory.allPairs(i) : factory.allPools(i)));
                 const poolContract = new ethers.Contract(poolAddress, PAIR_ABI, provider);
                 
                 try {
-                    const t0 = await poolContract.token0();
-                    const t1 = await poolContract.token1();
+                    const t0 = await withRetry(() => poolContract.token0());
+                    const t1 = await withRetry(() => poolContract.token1());
+                    await new Promise(r => setTimeout(r, 100)); // Delay to respect Alchemy CU limits
                     
                     discoveredTokens.add(t0.toLowerCase());
                     discoveredTokens.add(t1.toLowerCase());

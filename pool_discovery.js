@@ -2,8 +2,28 @@
 const { ethers } = require("ethers");
 require("dotenv").config();
 
-const RPC_URL = process.env.RPC_URL || "https://base.llamarpc.com";
-const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+const RPC_URL = process.env.RPC_URL || "https://mainnet.base.org";
+// Use StaticJsonRpcProvider for better performance with Alchemy
+const provider = new ethers.providers.StaticJsonRpcProvider(RPC_URL);
+
+/**
+ * Helper to handle Alchemy rate limits with exponential backoff
+ */
+async function withRetry(fn, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            if (e.message.includes("429") || e.message.includes("rate limit")) {
+                console.log(`⚠️ Rate limited. Retrying in ${delay}ms...`);
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            } else {
+                throw e;
+            }
+        }
+    }
+}
 
 // Factory ABIs to find pools
 const UNISWAP_V2_FACTORY_ABI = ["function getPair(address,address) external view returns (address)"];
@@ -29,18 +49,18 @@ async function discoverAllPools(tokenA, tokenB) {
         
         try {
             if (factory.type === "v2") {
-                const poolAddress = await contract.getPair(tokenA, tokenB);
+                const poolAddress = await withRetry(() => contract.getPair(tokenA, tokenB));
                 if (poolAddress !== ethers.constants.AddressZero) {
                     discoveredPools.push({ dex: name, address: poolAddress, type: "v2" });
                 }
             } else if (factory.type === "v3") {
-                // Check common fee tiers: 0.01%, 0.05%, 0.3%, 1%
                 const fees = [100, 500, 3000, 10000];
                 for (const fee of fees) {
-                    const poolAddress = await contract.getPool(tokenA, tokenB, fee);
+                    const poolAddress = await withRetry(() => contract.getPool(tokenA, tokenB, fee));
                     if (poolAddress !== ethers.constants.AddressZero) {
                         discoveredPools.push({ dex: name, address: poolAddress, type: "v3", fee });
                     }
+                    await new Promise(r => setTimeout(r, 200)); // Increased delay for Alchemy free tier
                 }
             } else if (factory.type === "aerodrome") {
                 // Check both Stable and Volatile
