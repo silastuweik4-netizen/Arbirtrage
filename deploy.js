@@ -44,8 +44,14 @@ async function main() {
   console.log("⏳ Deploying contract... this may take a minute.");
   
   try {
+    // Get current gas prices for EIP-1559
+    const feeData = await provider.getFeeData();
+    
+    console.log("⛽ Estimating gas and setting fees...");
+    
     const contract = await factory.deploy({
-      gasLimit: 3000000 // Safe limit for deployment
+      maxFeePerGas: feeData.maxFeePerGas,
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas
     });
 
     console.log(`🔗 Transaction hash: ${contract.deployTransaction.hash}`);
