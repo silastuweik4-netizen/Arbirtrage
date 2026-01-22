@@ -72,7 +72,11 @@ const IRouterV2ABI = [
   "function getAmountsOut(uint256 amountIn, address[] calldata path) external view returns (uint256[] memory amounts)"
 ];
 const AERODROME_ROUTER_ABI = [
-  "function getAmountsOut(uint256 amountIn, (address from,address to,bool stable,address factory)[] memory routes) external view returns (uint256[] memory amounts)"
+  "function getAmountsOut(uint256 amountIn, (address from,address to,bool stable,address factory)[] memory routes) external view returns (uint256[] memory amounts)",
+  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, (address from, address to, bool stable, address factory)[] calldata routes, address to, uint256 deadline) external returns (uint256[] memory amounts)"
+];
+const UNISWAP_V2_ROUTER_ABI = [
+  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory amounts)"
 ];
 const PAIR_ABI = [
   "function getReserves() view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast)",
@@ -258,6 +262,7 @@ class ArbitrageDetector {
       console.log(`📊 [TRIANGULAR] ${route.label} spread=${spread.toFixed(2)}%`);
       if (spread >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
         console.log(`✅ [TRIANGULAR] OPPORTUNITY FOUND!`);
+        // For triangular, we'd need a more complex executor, but for now we'll use the simple one
         await this._executeArb(directPool, directQuote);
       }
     } catch (err) {
@@ -267,34 +272,50 @@ class ArbitrageDetector {
 
   async _executeArb(pool, quote) {
     try {
-      const router = this._routerForVenue(quote.venue);
+      // Prepare swap data for the contract
+      // This is a simplified version - in production you'd need to encode the exact swap calls
+      const deadline = Math.floor(Date.now() / 1000) + 600;
+      
+      // Example encoding for Uniswap V2
+      const uniInterface = new ethers.utils.Interface(UNISWAP_V2_ROUTER_ABI);
+      const swapDataUni = uniInterface.encodeFunctionData("swapExactTokensForTokens", [
+        ethers.utils.parseUnits(String(CONFIG.TRADE_SIZE), pool.token0.decimals),
+        0, // minAmountOut
+        [pool.token0.address, pool.token1.address],
+        process.env.ARB_CONTRACT_ADDRESS || "0x68168c8A65DA9Ed1cb2B674E2039C31a40BFC336",
+        deadline
+      ]);
+
+      // Example encoding for Aerodrome
+      const aeroInterface = new ethers.utils.Interface(AERODROME_ROUTER_ABI);
+      const routes = [{
+        from: pool.token1.address,
+        to: pool.token0.address,
+        stable: !!quote.meta?.stable,
+        factory: DEX_ADDRESSES.AERODROME_FACTORY
+      }];
+      const swapDataAero = aeroInterface.encodeFunctionData("swapExactTokensForTokens", [
+        quote.amountOutWei,
+        0, // minAmountOut
+        routes,
+        process.env.ARB_CONTRACT_ADDRESS || "0x68168c8A65DA9Ed1cb2B674E2039C31a40BFC336",
+        deadline
+      ]);
+
       await executeArb({
-        dexBuy: 0, dexSell: 0,
-        routerBuy: router, routerSell: router,
+        tokenBorrow: pool.token0.address,
+        amountBorrow: ethers.utils.parseUnits(String(CONFIG.TRADE_SIZE), pool.token0.decimals),
         tokenIn: pool.token0.address,
-        tokenMid: pool.token1.address,
         tokenOut: pool.token1.address,
-        amountIn: ethers.utils.parseUnits(String(CONFIG.TRADE_SIZE), pool.token0.decimals),
-        minBuyOut: quote.amountOutWei,
-        minSellOut: quote.amountOutWei,
-        feeBuy: quote.meta?.fee || 3000,
-        feeSell: quote.meta?.fee || 3000,
-        stableBuy: !!quote.meta?.stable,
-        stableSell: !!quote.meta?.stable,
-        factoryBuy: DEX_ADDRESSES.AERODROME_FACTORY,
-        factorySell: DEX_ADDRESSES.AERODROME_FACTORY,
-        recipient: CONFIG.PROFIT_RECIPIENT || ethers.constants.AddressZero
+        minAmountOut: ethers.utils.parseUnits(String(CONFIG.TRADE_SIZE), pool.token0.decimals), // Must at least return what we borrowed
+        swapDataA_Uni: swapDataUni,
+        swapDataA_Aero: "0x", // Placeholder
+        swapDataB_Uni: "0x", // Placeholder
+        swapDataB_Aero: swapDataAero
       });
     } catch (err) {
       console.error(`Execution error: ${err.message}`);
     }
-  }
-
-  _routerForVenue(venue) {
-    if (venue === "uniswap_v3") return DEX_ADDRESSES.UNISWAP_V2_ROUTER;
-    if (venue === "aerodrome")  return DEX_ADDRESSES.AERODROME_ROUTER;
-    if (venue === "uniswap_v2") return DEX_ADDRESSES.UNISWAP_V2_ROUTER;
-    return ethers.constants.AddressZero;
   }
 }
 
