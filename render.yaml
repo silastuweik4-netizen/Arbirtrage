@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: arbitrage-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: RPC_URL
+        value: https://mainnet.base.org
+      - key: PRICE_DIFFERENCE_THRESHOLD
+        value: "0.5"
+      - key: CHECK_INTERVAL_MS
+        value: "10000"
+      - key: TRADE_SIZE
+        value: "1"
+      - key: MIN_LIQUIDITY_USD
+        value: "1000"
+      - key: PORT
+        value: "3000"
+      # Add sensitive variables in Render dashboard:
+      # - WEBHOOK_URL
+      # - PRIVATE_KEY
+      # - FLASHLOAN_CONTRACT_ADDRESS
+      # - GAS_LIMIT
