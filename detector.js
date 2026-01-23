@@ -102,6 +102,56 @@ const TOKENS = {
   LDO: { address: '0x76887793387768521a3e2fbd4740173100f5', name: 'LDO', decimals: 18 },
 };
 
+// ==================== EXPLICIT POOLS ====================
+const VIRTUAL_POOLS = [
+  { dex: 'aerodrome', pairAddress: '0x21594b992F68495dD28d605834b58889d0a727c7', token0: TOKENS.VIRTUAL, token1: TOKENS.WETH, meta: { stable: false } },
+  { dex: 'uniswap_v2', pairAddress: '0xE31c372a7Af875b3B5E0F3713B17ef51556da667', token0: TOKENS.VIRTUAL, token1: TOKENS.WETH },
+  { dex: 'uniswap_v3', pairAddress: '0x1D4daB3f27C7F656b6323C1D6Ef713b48A8f72F1', token0: TOKENS.VIRTUAL, token1: TOKENS.WETH, meta: { feeTiers: [100, 500, 3000, 10000] } },
+  { dex: 'uniswap_v3', pairAddress: '0x529d2863a1521d0b57db028168fdE2E97120017C', token0: TOKENS.VIRTUAL, token1: TOKENS.USDC, meta: { feeTiers: [100, 500, 3000, 10000] } }
+];
+
+const AERO_POOLS = [
+  { dex: 'uniswap_v3', pairAddress: '0xE5B5f522E98B5a2baAe212d4dA66b865B781DB97', token0: TOKENS.AERO, token1: TOKENS.USDC, meta: { feeTiers: [100, 500, 3000, 10000] } },
+  { dex: 'aerodrome', pairAddress: '0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d', token0: TOKENS.AERO, token1: TOKENS.USDC, meta: { stable: false } },
+  { dex: 'pancakeswap_v3', pairAddress: '0x20CB8f872ae894F7c9e32e621C186e5AFCe82Fd0', token0: TOKENS.AERO, token1: TOKENS.WETH, meta: { feeTiers: [100, 500, 3000, 10000] } }
+];
+
+// ==================== TRIANGULAR ROUTES ====================
+const TRIANGULAR_ROUTES = [
+  {
+    label: 'VIRTUAL-WETH-USDC',
+    legs: [
+      { tokenIn: TOKENS.VIRTUAL, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} },
+      { tokenIn: TOKENS.WETH, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} }
+    ],
+    direct: { tokenIn: TOKENS.VIRTUAL, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} }
+  },
+  {
+    label: 'VIRTUAL-USDC-WETH',
+    legs: [
+      { tokenIn: TOKENS.VIRTUAL, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} },
+      { tokenIn: TOKENS.USDC, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} }
+    ],
+    direct: { tokenIn: TOKENS.VIRTUAL, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} }
+  },
+  {
+    label: 'AERO-WETH-USDC',
+    legs: [
+      { tokenIn: TOKENS.AERO, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} },
+      { tokenIn: TOKENS.WETH, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} }
+    ],
+    direct: { tokenIn: TOKENS.AERO, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} }
+  },
+  {
+    label: 'AERO-USDC-WETH',
+    legs: [
+      { tokenIn: TOKENS.AERO, tokenOut: TOKENS.USDC, meta: { feeTiers:[100,500,3000,10000]} },
+      { tokenIn: TOKENS.USDC, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} }
+    ],
+    direct: { tokenIn: TOKENS.AERO, tokenOut: TOKENS.WETH, meta: { feeTiers:[100,500,3000,10000]} }
+  }
+];
+
 // ==================== DYNAMIC PAIR GENERATION ====================
 function generatePairs() {
   const pairs = [];
@@ -111,14 +161,14 @@ function generatePairs() {
   
   for (const tName of majorTokens) {
     for (const sName of stablecoins) {
-      pairs.push({ t0: TOKENS[tName], t1: TOKENS[sName], dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+      pairs.push({ t0: TOKENS[tName], t1: TOKENS[sName], dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'], meta: { feeTiers: [100, 500, 3000, 10000] } });
     }
   }
   
   const otherTokens = tokenList.filter(t => !majorTokens.includes(t) && !stablecoins.includes(t));
   for (const tName of otherTokens) {
-    pairs.push({ t0: TOKENS[tName], t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
-    pairs.push({ t0: TOKENS[tName], t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'] });
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.WETH, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'], meta: { feeTiers: [100, 500, 3000, 10000] } });
+    pairs.push({ t0: TOKENS[tName], t1: TOKENS.USDC, dexes: ['uniswap_v3', 'uniswap_v2', 'aerodrome'], meta: { feeTiers: [100, 500, 3000, 10000] } });
   }
   
   return pairs;
@@ -150,7 +200,7 @@ class PriceFetcher {
       const [tA, tB] = addr0.toLowerCase() < addr1.toLowerCase() ? [addr0, addr1] : [addr1, addr0];
 
       if (dexType === 'uniswap_v3') {
-        for (const fee of [500, 3000, 10000]) {
+        for (const fee of [100, 500, 3000, 10000]) {
           poolAddress = await this.withTimeout(this.v3Factory.getPool(tA, tB, fee));
           if (poolAddress !== ethers.constants.AddressZero) break;
         }
@@ -176,63 +226,87 @@ class PriceFetcher {
     } catch (e) { return 0; }
   }
 
-  async getPrice(token0, token1, dexType, tradeSize) {
+  async getPrice(token0, token1, dexType, tradeSize, meta = {}) {
     const amountIn = ethers.utils.parseUnits(tradeSize, token0.decimals);
     try {
       if (dexType === 'uniswap_v3') {
-        let bestOut = ethers.BigNumber.from(0);
-        let bestFee = 3000;
-        for (const fee of [500, 3000, 10000]) {
+        const feeTiers = meta?.feeTiers || [100, 500, 3000, 10000];
+        const results = {};
+        for (const fee of feeTiers) {
           try {
-            // Use explicit function signature for QuoterV2 struct input
             const result = await this.withTimeout(this.quoterV3["quoteExactInputSingle((address,address,uint256,uint24,uint160))"]({
-              tokenIn: token0.address,
-              tokenOut: token1.address,
-              amountIn: amountIn,
-              fee: fee,
-              sqrtPriceLimitX96: 0
+              tokenIn: token0.address, tokenOut: token1.address, amountIn: amountIn, fee: fee, sqrtPriceLimitX96: 0
             }));
-            const out = result.amountOut;
-            if (out.gt(bestOut)) { bestOut = out; bestFee = fee; }
+            if (result.amountOut.gt(0)) results[fee] = result.amountOut;
           } catch (e) {
-            // Fallback to simple signature if struct fails
             try {
               const out = await this.withTimeout(this.quoterV3["quoteExactInputSingle(address,address,uint24,uint256,uint160)"](token0.address, token1.address, fee, amountIn, 0));
-              if (out.gt(bestOut)) { bestOut = out; bestFee = fee; }
+              if (out.gt(0)) results[fee] = out;
             } catch (e2) {}
           }
         }
-        return bestOut.gt(0) ? { amount: bestOut, meta: { fee: bestFee } } : null;
+        return Object.keys(results).length > 0 ? results : null;
       } else if (dexType === 'uniswap_v2') {
         const amounts = await this.withTimeout(this.routerV2.getAmountsOut(amountIn, [token0.address, token1.address]));
-        return { amount: amounts[1], meta: {} };
+        return amounts[1];
       } else if (dexType === 'aerodrome') {
         const routes = [{ from: token0.address, to: token1.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }];
         const amounts = await this.withTimeout(this.aerodromeRouter.getAmountsOut(amountIn, routes));
-        return { amount: amounts[1], meta: {} };
+        return amounts[1];
       }
     } catch (e) { return null; }
     return null;
+  }
+
+  async getBestQuote(tokenIn, tokenOut, tradeSize, meta = {}) {
+    const venues = ['uniswap_v3','uniswap_v2','aerodrome'];
+    let bestOut = 0;
+    let bestVenue = null;
+    let bestMeta = {};
+
+    for (const dex of venues) {
+      const quote = await this.getPrice(tokenIn, tokenOut, dex, tradeSize, meta);
+      if (!quote) continue;
+
+      if (dex === 'uniswap_v3' && typeof quote === 'object') {
+        for (const [fee, out] of Object.entries(quote)) {
+          const val = parseFloat(ethers.utils.formatUnits(out, tokenOut.decimals));
+          if (val > bestOut) { bestOut = val; bestVenue = dex; bestMeta = { fee: parseInt(fee) }; }
+        }
+      } else {
+        const val = parseFloat(ethers.utils.formatUnits(quote, tokenOut.decimals));
+        if (val > bestOut) { bestOut = val; bestVenue = dex; bestMeta = {}; }
+      }
+    }
+    return { bestOut, bestVenue, bestMeta };
   }
 }
 
 // ==================== ARBITRAGE DETECTOR ====================
 class ArbitrageDetector {
-  constructor() {
-    this.prices = new PriceFetcher();
-  }
+  constructor() { this.prices = new PriceFetcher(); }
 
   async getSpreadData(pair) {
     const priceData = {};
     const liquidityData = {};
+    const t0 = pair.t0 || pair.token0;
+    const t1 = pair.t1 || pair.token1;
 
-    for (const dex of pair.dexes) {
-      const liquidityUSD = await this.prices.getLiquidityUSD(pair.t0, pair.t1, dex);
+    for (const dex of pair.dexes || [pair.dex]) {
+      const liquidityUSD = await this.prices.getLiquidityUSD(t0, t1, dex);
       liquidityData[dex] = liquidityUSD;
       if (liquidityUSD < CONFIG.MIN_LIQUIDITY_USD) continue;
 
-      const result = await this.prices.getPrice(pair.t0, pair.t1, dex, CONFIG.TRADE_SIZE);
-      if (result && result.amount.gt(0)) priceData[dex] = result;
+      const price = await this.prices.getPrice(t0, t1, dex, CONFIG.TRADE_SIZE, pair.meta || {});
+      if (!price) continue;
+
+      if (dex === 'uniswap_v3' && typeof price === 'object') {
+        for (const [fee, out] of Object.entries(price)) {
+          if (out && out.gt(0)) priceData[`${dex}_${fee}`] = { amount: out, meta: { fee: parseInt(fee) } };
+        }
+      } else if (price.gt && price.gt(0)) {
+        priceData[dex] = { amount: price, meta: {} };
+      }
     }
 
     const dexNames = Object.keys(priceData);
@@ -247,81 +321,91 @@ class ArbitrageDetector {
       if (amount.lt(bestSellPrice)) { bestSellPrice = amount; bestSellDex = dex; bestSellMeta = meta; }
     }
 
-    const pBuy = parseFloat(ethers.utils.formatUnits(bestBuyPrice, pair.t1.decimals));
-    const pSell = parseFloat(ethers.utils.formatUnits(bestSellPrice, pair.t1.decimals));
+    const pBuy = parseFloat(ethers.utils.formatUnits(bestBuyPrice, t1.decimals));
+    const pSell = parseFloat(ethers.utils.formatUnits(bestSellPrice, t1.decimals));
     const diff = ((pBuy - pSell) / pSell) * 100;
 
     return { diff, bestBuyDex, bestSellDex, pBuy, pSell, bestBuyPrice, bestSellPrice, bestBuyMeta, bestSellMeta, liquidityData, liquidDexes: dexNames };
   }
 
+  async evaluateTriangularBest(route) {
+    const tradeSize = CONFIG.TRADE_SIZE;
+    const leg1 = await this.prices.getBestQuote(route.legs[0].tokenIn, route.legs[0].tokenOut, tradeSize, route.legs[0].meta);
+    if (!leg1.bestOut) return null;
+    const leg2 = await this.prices.getBestQuote(route.legs[1].tokenIn, route.legs[1].tokenOut, tradeSize, route.legs[1].meta);
+    if (!leg2.bestOut) return null;
+    const composite = leg1.bestOut * leg2.bestOut;
+    const direct = await this.prices.getBestQuote(route.direct.tokenIn, route.direct.tokenOut, tradeSize, route.direct.meta);
+    if (!direct.bestOut) return null;
+    const diff = ((composite - direct.bestOut) / direct.bestOut) * 100;
+    return { composite, direct: direct.bestOut, diff, leg1, leg2, directQuote: direct };
+  }
+
   async scan() {
-    console.log(`\n[${new Date().toISOString()}] Scanning ${VERIFIED_PAIRS.length} dynamically generated pairs...`);
+    const allPairs = [...VERIFIED_PAIRS, ...VIRTUAL_POOLS, ...AERO_POOLS];
+    console.log(`\n[${new Date().toISOString()}] Scanning ${allPairs.length} pairs & ${TRIANGULAR_ROUTES.length} triangular routes...`);
     let opportunitiesFound = 0;
 
-    for (const pair of VERIFIED_PAIRS) {
+    for (const pair of allPairs) {
       const firstCheck = await this.getSpreadData(pair);
       if (!firstCheck || firstCheck.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
-
-      console.log(`🔍 Potential opportunity found for ${pair.t0.name}/${pair.t1.name} (${firstCheck.diff.toFixed(2)}%). Double checking...`);
       await new Promise(resolve => setTimeout(resolve, 500));
-
       const secondCheck = await this.getSpreadData(pair);
       if (secondCheck && secondCheck.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
         opportunitiesFound++;
-        const msg = `🎯 VERIFIED OPPORTUNITY: ${pair.t0.name}/${pair.t1.name} | Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
+        const msg = `🎯 VERIFIED: ${(pair.t0||pair.token0).name}/${(pair.t1||pair.token1).name} | Profit: ${secondCheck.diff.toFixed(2)}% | Buy on ${secondCheck.bestSellDex}, Sell on ${secondCheck.bestBuyDex}`;
         console.log(msg);
         if (CONFIG.WEBHOOK_URL) axios.post(CONFIG.WEBHOOK_URL, { content: msg }).catch(() => {});
-        
         await this._executeArb(pair, secondCheck);
       }
     }
-    console.log(`✓ Scan complete. Found ${opportunitiesFound} verified actionable opportunities.\n`);
+
+    for (const route of TRIANGULAR_ROUTES) {
+      const first = await this.evaluateTriangularBest(route);
+      if (!first || first.diff < CONFIG.PRICE_DIFFERENCE_THRESHOLD) continue;
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const second = await this.evaluateTriangularBest(route);
+      if (second && second.diff >= CONFIG.PRICE_DIFFERENCE_THRESHOLD) {
+        opportunitiesFound++;
+        const msg = `🎯 TRIANGULAR VERIFIED: ${route.label} | Profit: ${second.diff.toFixed(2)}%`;
+        console.log(msg);
+        if (CONFIG.WEBHOOK_URL) axios.post(CONFIG.WEBHOOK_URL, { content: msg }).catch(() => {});
+        // Triangular execution logic would go here
+      }
+    }
+    console.log(`✓ Scan complete. Found ${opportunitiesFound} verified opportunities.\n`);
   }
 
   async _executeArb(pair, data) {
     try {
+      const t0 = pair.t0 || pair.token0;
+      const t1 = pair.t1 || pair.token1;
       const deadline = Math.floor(Date.now() / 1000) + 600;
-      const amountIn = ethers.utils.parseUnits(CONFIG.TRADE_SIZE, pair.t0.decimals);
+      const amountIn = ethers.utils.parseUnits(CONFIG.TRADE_SIZE, t0.decimals);
       
-      // Encode Swap A (Buy on cheaper DEX)
-      let swapDataA_Uni = "0x", swapDataA_Aero = "0x";
-      if (data.bestSellDex === 'uniswap_v3') {
-        const iface = new ethers.utils.Interface(UNISWAP_V3_ROUTER_ABI);
-        swapDataA_Uni = iface.encodeFunctionData("exactInputSingle", [{
-          tokenIn: pair.t0.address, tokenOut: pair.t1.address, fee: data.bestSellMeta.fee,
-          recipient: CONFIG.ARB_CONTRACT_ADDRESS, deadline, amountIn, amountOutMinimum: 0, sqrtPriceLimitX96: 0
-        }]);
-      } else if (data.bestSellDex === 'uniswap_v2') {
-        const iface = new ethers.utils.Interface(UNISWAP_V2_ROUTER_ABI);
-        swapDataA_Uni = iface.encodeFunctionData("swapExactTokensForTokens", [amountIn, 0, [pair.t0.address, pair.t1.address], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
-      } else if (data.bestSellDex === 'aerodrome') {
-        const iface = new ethers.utils.Interface(AERODROME_ROUTER_ABI);
-        swapDataA_Aero = iface.encodeFunctionData("swapExactTokensForTokens", [amountIn, 0, [{ from: pair.t0.address, to: pair.t1.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
-      }
+      const encodeSwap = (dex, tokenIn, tokenOut, amount, meta) => {
+        const cleanDex = dex.split('_')[0];
+        if (cleanDex === 'uniswap_v3') {
+          return new ethers.utils.Interface(UNISWAP_V3_ROUTER_ABI).encodeFunctionData("exactInputSingle", [{
+            tokenIn: tokenIn.address, tokenOut: tokenOut.address, fee: meta.fee,
+            recipient: CONFIG.ARB_CONTRACT_ADDRESS, deadline, amountIn: amount, amountOutMinimum: 0, sqrtPriceLimitX96: 0
+          }]);
+        } else if (cleanDex === 'uniswap_v2') {
+          return new ethers.utils.Interface(UNISWAP_V2_ROUTER_ABI).encodeFunctionData("swapExactTokensForTokens", [amount, 0, [tokenIn.address, tokenOut.address], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
+        } else if (cleanDex === 'aerodrome') {
+          return new ethers.utils.Interface(AERODROME_ROUTER_ABI).encodeFunctionData("swapExactTokensForTokens", [amount, 0, [{ from: tokenIn.address, to: tokenOut.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
+        }
+        return "0x";
+      };
 
-      // Encode Swap B (Sell on more expensive DEX)
-      let swapDataB_Uni = "0x", swapDataB_Aero = "0x";
-      if (data.bestBuyDex === 'uniswap_v3') {
-        const iface = new ethers.utils.Interface(UNISWAP_V3_ROUTER_ABI);
-        swapDataB_Uni = iface.encodeFunctionData("exactInputSingle", [{
-          tokenIn: pair.t1.address, tokenOut: pair.t0.address, fee: data.bestBuyMeta.fee,
-          recipient: CONFIG.ARB_CONTRACT_ADDRESS, deadline, amountIn: data.bestBuyPrice, amountOutMinimum: 0, sqrtPriceLimitX96: 0
-        }]);
-      } else if (data.bestBuyDex === 'uniswap_v2') {
-        const iface = new ethers.utils.Interface(UNISWAP_V2_ROUTER_ABI);
-        swapDataB_Uni = iface.encodeFunctionData("swapExactTokensForTokens", [data.bestBuyPrice, 0, [pair.t1.address, pair.t0.address], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
-      } else if (data.bestBuyDex === 'aerodrome') {
-        const iface = new ethers.utils.Interface(AERODROME_ROUTER_ABI);
-        swapDataB_Aero = iface.encodeFunctionData("swapExactTokensForTokens", [data.bestBuyPrice, 0, [{ from: pair.t1.address, to: pair.t0.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }], CONFIG.ARB_CONTRACT_ADDRESS, deadline]);
-      }
+      const swapDataA_Uni = data.bestSellDex.startsWith('uniswap') ? encodeSwap(data.bestSellDex, t0, t1, amountIn, data.bestSellMeta) : "0x";
+      const swapDataA_Aero = data.bestSellDex === 'aerodrome' ? encodeSwap(data.bestSellDex, t0, t1, amountIn, data.bestSellMeta) : "0x";
+      const swapDataB_Uni = data.bestBuyDex.startsWith('uniswap') ? encodeSwap(data.bestBuyDex, t1, t0, data.bestBuyPrice, data.bestBuyMeta) : "0x";
+      const swapDataB_Aero = data.bestBuyDex === 'aerodrome' ? encodeSwap(data.bestBuyDex, t1, t0, data.bestBuyPrice, data.bestBuyMeta) : "0x";
 
       await executeArb({
-        tokenBorrow: pair.t0.address,
-        amountBorrow: amountIn,
-        tokenIn: pair.t0.address,
-        tokenOut: pair.t1.address,
-        minAmountOut: amountIn,
-        swapDataA_Uni, swapDataA_Aero, swapDataB_Uni, swapDataB_Aero
+        tokenBorrow: t0.address, amountBorrow: amountIn, tokenIn: t0.address, tokenOut: t1.address,
+        minAmountOut: amountIn, swapDataA_Uni, swapDataA_Aero, swapDataB_Uni, swapDataB_Aero
       });
     } catch (err) { console.error(`Execution error: ${err.message}`); }
   }
@@ -333,7 +417,7 @@ async function main() {
   setInterval(() => detector.scan(), CONFIG.CHECK_INTERVAL_MS);
   require('http').createServer((req, res) => {
     res.writeHead(200);
-    res.end('Arbitrage Bot is running with Robust Uniswap V3 Support!\n');
+    res.end('Arbitrage Bot is running with Triangular and Explicit Pool Support!\n');
   }).listen(CONFIG.PORT, () => console.log(`Health check server running on port ${CONFIG.PORT}`));
 }
 
