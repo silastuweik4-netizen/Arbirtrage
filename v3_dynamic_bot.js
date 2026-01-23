@@ -7,9 +7,9 @@ const { LiquidityOptimizer } = require("./liquidity_optimizer");
 const { executeArb } = require("./arbexecutor");
 
 const BASE_TOKENS = [
-    "0x4200000000000000000000000000000000000006", // WETH
-    "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", // USDC
-    "0xcbB7C915417833f50075de95246D504f013c144f"  // cbBTC
+    ethers.utils.getAddress("0x4200000000000000000000000000000000000006"), // WETH
+    ethers.utils.getAddress("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"), // USDC
+    ethers.utils.getAddress("0xcbB7C915417833f50075de95246D504f013c144f")  // cbBTC
 ];
 
 async function main() {
