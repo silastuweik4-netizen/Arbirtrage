@@ -40,7 +40,7 @@ function startEventListener(onNewPool) {
     });
 
     // Uniswap V3 Listener (Factory address is different for V3)
-    const V3_FACTORY_ADDRESS = ethers.utils.getAddress("0x33128a8fc170d030b747a24199d40ac626abe82f");
+    const V3_FACTORY_ADDRESS = ethers.utils.getAddress("0x33128a8fc170d030b747a24199d40ac626abe82f".toLowerCase());
     const V3_FACTORY_ABI = ["event PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)"];
     const uniV3Factory = new ethers.Contract(V3_FACTORY_ADDRESS, V3_FACTORY_ABI, provider);
     uniV3Factory.on("PoolCreated", (token0, token1, fee, tickSpacing, pool) => {

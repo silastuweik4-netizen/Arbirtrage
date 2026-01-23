@@ -20,7 +20,7 @@ async function withRetry(fn, retries = 3, delay = 1000) {
 
 const FACTORIES = {
     UNISWAP_V2: {
-        address: ethers.utils.getAddress("0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6"),
+        address: ethers.utils.getAddress("0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6".toLowerCase()),
         abi: [
             "function allPairsLength() external view returns (uint256)",
             "function allPairs(uint256) external view returns (address)",
@@ -29,7 +29,7 @@ const FACTORIES = {
         type: "v2"
     },
     AERODROME: {
-        address: ethers.utils.getAddress("0x420DD381b31aEf6683db6B902084cB0FFECe40Da"),
+        address: ethers.utils.getAddress("0x420DD381b31aEf6683db6B902084cB0FFECe40Da".toLowerCase()),
         abi: [
             "function allPoolsLength() external view returns (uint256)",
             "function allPools(uint256) external view returns (address)",

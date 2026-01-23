@@ -31,10 +31,10 @@ const UNISWAP_V3_FACTORY_ABI = ["function getPool(address,address,uint24) extern
 const AERODROME_FACTORY_ABI = ["function getPool(address,address,bool) external view returns (address)"];
 
 const FACTORIES = {
-    UNISWAP_V2: { address: ethers.utils.getAddress("0x8909dc15e40173ff4699343b6eb8132c65e18ec6"), abi: UNISWAP_V2_FACTORY_ABI, type: "v2" },
-    UNISWAP_V3: { address: ethers.utils.getAddress("0x33128a8fC170d030b747a24199D40Ac626aBe82F"), abi: UNISWAP_V3_FACTORY_ABI, type: "v3" },
-    AERODROME:  { address: ethers.utils.getAddress("0x420DD381b31aEf6683db6B902084cB0FFECe40Da"), abi: AERODROME_FACTORY_ABI, type: "aerodrome" },
-    PANCAKE_V3: { address: ethers.utils.getAddress("0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865"), abi: UNISWAP_V3_FACTORY_ABI, type: "v3" }
+    UNISWAP_V2: { address: ethers.utils.getAddress("0x8909dc15e40173ff4699343b6eb8132c65e18ec6".toLowerCase()), abi: UNISWAP_V2_FACTORY_ABI, type: "v2" },
+    UNISWAP_V3: { address: ethers.utils.getAddress("0x33128a8fC170d030b747a24199D40Ac626aBe82F".toLowerCase()), abi: UNISWAP_V3_FACTORY_ABI, type: "v3" },
+    AERODROME:  { address: ethers.utils.getAddress("0x420DD381b31aEf6683db6B902084cB0FFECe40Da".toLowerCase()), abi: AERODROME_FACTORY_ABI, type: "aerodrome" },
+    PANCAKE_V3: { address: ethers.utils.getAddress("0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865".toLowerCase()), abi: UNISWAP_V3_FACTORY_ABI, type: "v3" }
 };
 
 /**
@@ -44,8 +44,8 @@ async function discoverAllPools(tokenA, tokenB) {
     const discoveredPools = [];
     console.log(`🔍 Searching for all pools: ${tokenA} <-> ${tokenB}`);
 
-    const addrA = ethers.utils.getAddress(tokenA);
-    const addrB = ethers.utils.getAddress(tokenB);
+    const addrA = ethers.utils.getAddress(tokenA.toLowerCase());
+    const addrB = ethers.utils.getAddress(tokenB.toLowerCase());
 
     for (const [name, factory] of Object.entries(FACTORIES)) {
         const contract = new ethers.Contract(factory.address, factory.abi, provider);
