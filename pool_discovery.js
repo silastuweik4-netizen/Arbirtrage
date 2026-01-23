@@ -59,9 +59,14 @@ async function discoverAllPools(tokenA, tokenB) {
             } else if (factory.type === "v3") {
                 const fees = [100, 500, 3000, 10000];
                 for (const fee of fees) {
-                    const poolAddress = await withRetry(() => contract.getPool(addrA, addrB, fee));
-                    if (poolAddress !== ethers.constants.AddressZero) {
-                        discoveredPools.push({ dex: name, address: poolAddress, type: "v3", fee });
+                    try {
+                        const poolAddress = await withRetry(() => contract.getPool(addrA, addrB, fee));
+                        if (poolAddress && poolAddress !== ethers.constants.AddressZero) {
+                            discoveredPools.push({ dex: name, address: poolAddress, type: "v3", fee });
+                        }
+                    } catch (v3Error) {
+                        // Uniswap V3 often reverts if the pool doesn't exist for that fee tier
+                        // We catch it here so it doesn't log a scary error or stop the bot
                     }
                     await new Promise(r => setTimeout(r, 200)); // Increased delay for Alchemy free tier
                 }
