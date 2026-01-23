@@ -7,11 +7,11 @@ const { executeArb } = require("./arbexecutor");
 const CONFIG = {
   BASE_CHAIN_ID: 8453,
   RPC_URL: process.env.RPC_URL || 'https://mainnet.base.org',
-  PRICE_DIFFERENCE_THRESHOLD: parseFloat(process.env.PRICE_DIFFERENCE_THRESHOLD) || 0.5,
-  CHECK_INTERVAL_MS: parseInt(process.env.CHECK_INTERVAL_MS) || 10000,
+  PRICE_DIFFERENCE_THRESHOLD: parseFloat(process.env.PRICE_DIFFERENCE_THRESHOLD) || 0.1,
+  CHECK_INTERVAL_MS: parseInt(process.env.CHECK_INTERVAL_MS) || 5000,
   WEBHOOK_URL: process.env.WEBHOOK_URL || null,
   TRADE_SIZE: process.env.TRADE_SIZE || '1',
-  MIN_LIQUIDITY_USD: parseInt(process.env.MIN_LIQUIDITY_USD) || 1000,
+  MIN_LIQUIDITY_USD: parseInt(process.env.MIN_LIQUIDITY_USD) || 100,
   PORT: parseInt(process.env.PORT || "3000"),
   ARB_CONTRACT_ADDRESS: process.env.ARB_CONTRACT_ADDRESS || "0x68168c8A65DA9Ed1cb2B674E2039C31a40BFC336"
 };
@@ -25,7 +25,8 @@ const ERC20_ABI = [
   'function balanceOf(address) view returns (uint256)'
 ];
 const UNISWAP_V3_QUOTER_ABI = [
-  'function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external view returns (uint256)'
+  'function quoteExactInputSingle(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn, uint160 sqrtPriceLimitX96) external view returns (uint256)',
+  'function quoteExactInputSingle((address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)) external view returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)'
 ];
 const UNISWAP_V3_ROUTER_ABI = [
   'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut)'
@@ -136,27 +137,42 @@ class PriceFetcher {
     this.aeroFactory = new ethers.Contract(DEX_ADDRESSES.AERODROME_FACTORY, AERODROME_FACTORY_ABI, provider);
   }
 
+  async withTimeout(promise, ms = 5000) {
+    let timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms));
+    return Promise.race([promise, timeout]);
+  }
+
   async getLiquidityUSD(token0, token1, dexType) {
     try {
       let poolAddress = ethers.constants.AddressZero;
+      const addr0 = ethers.utils.getAddress(token0.address);
+      const addr1 = ethers.utils.getAddress(token1.address);
+      const [tA, tB] = addr0.toLowerCase() < addr1.toLowerCase() ? [addr0, addr1] : [addr1, addr0];
+
       if (dexType === 'uniswap_v3') {
-        // Check most common fee tier (3000 = 0.3%)
-        poolAddress = await this.v3Factory.getPool(token0.address, token1.address, 3000);
+        for (const fee of [500, 3000, 10000]) {
+          poolAddress = await this.withTimeout(this.v3Factory.getPool(tA, tB, fee));
+          if (poolAddress !== ethers.constants.AddressZero) break;
+        }
       } else if (dexType === 'uniswap_v2') {
-        poolAddress = await this.v2Factory.getPair(token0.address, token1.address);
+        poolAddress = await this.withTimeout(this.v2Factory.getPair(tA, tB));
       } else if (dexType === 'aerodrome') {
-        poolAddress = await this.aeroFactory.getPool(token0.address, token1.address, false);
+        poolAddress = await this.withTimeout(this.aeroFactory.getPool(tA, tB, false));
       }
 
       if (poolAddress === ethers.constants.AddressZero) return 0;
 
       const t0Contract = new ethers.Contract(token0.address, ERC20_ABI, provider);
-      const bal0 = await t0Contract.balanceOf(poolAddress);
-      if (bal0.isZero()) return 0;
-
-      const balanceFormatted = parseFloat(ethers.utils.formatUnits(bal0, token0.decimals));
-      const price = TOKEN_PRICES_USD[token0.name] || 1;
-      return balanceFormatted * price;
+      const t1Contract = new ethers.Contract(token1.address, ERC20_ABI, provider);
+      const [bal0, bal1] = await Promise.all([
+        this.withTimeout(t0Contract.balanceOf(poolAddress)),
+        this.withTimeout(t1Contract.balanceOf(poolAddress))
+      ]);
+      
+      const val0 = parseFloat(ethers.utils.formatUnits(bal0, token0.decimals)) * (TOKEN_PRICES_USD[token0.name] || 0);
+      const val1 = parseFloat(ethers.utils.formatUnits(bal1, token1.decimals)) * (TOKEN_PRICES_USD[token1.name] || 0);
+      
+      return val0 + val1;
     } catch (e) { return 0; }
   }
 
@@ -164,22 +180,35 @@ class PriceFetcher {
     const amountIn = ethers.utils.parseUnits(tradeSize, token0.decimals);
     try {
       if (dexType === 'uniswap_v3') {
-        // Scan multiple fee tiers for V3
         let bestOut = ethers.BigNumber.from(0);
         let bestFee = 3000;
         for (const fee of [500, 3000, 10000]) {
           try {
-            const out = await this.quoterV3.callStatic.quoteExactInputSingle(token0.address, token1.address, fee, amountIn, 0);
+            // Use explicit function signature for QuoterV2 struct input
+            const result = await this.withTimeout(this.quoterV3["quoteExactInputSingle((address,address,uint256,uint24,uint160))"]({
+              tokenIn: token0.address,
+              tokenOut: token1.address,
+              amountIn: amountIn,
+              fee: fee,
+              sqrtPriceLimitX96: 0
+            }));
+            const out = result.amountOut;
             if (out.gt(bestOut)) { bestOut = out; bestFee = fee; }
-          } catch (e) {}
+          } catch (e) {
+            // Fallback to simple signature if struct fails
+            try {
+              const out = await this.withTimeout(this.quoterV3["quoteExactInputSingle(address,address,uint24,uint256,uint160)"](token0.address, token1.address, fee, amountIn, 0));
+              if (out.gt(bestOut)) { bestOut = out; bestFee = fee; }
+            } catch (e2) {}
+          }
         }
         return bestOut.gt(0) ? { amount: bestOut, meta: { fee: bestFee } } : null;
       } else if (dexType === 'uniswap_v2') {
-        const amounts = await this.routerV2.getAmountsOut(amountIn, [token0.address, token1.address]);
+        const amounts = await this.withTimeout(this.routerV2.getAmountsOut(amountIn, [token0.address, token1.address]));
         return { amount: amounts[1], meta: {} };
       } else if (dexType === 'aerodrome') {
         const routes = [{ from: token0.address, to: token1.address, stable: false, factory: DEX_ADDRESSES.AERODROME_FACTORY }];
-        const amounts = await this.aerodromeRouter.getAmountsOut(amountIn, routes);
+        const amounts = await this.withTimeout(this.aerodromeRouter.getAmountsOut(amountIn, routes));
         return { amount: amounts[1], meta: {} };
       }
     } catch (e) { return null; }
@@ -304,8 +333,12 @@ async function main() {
   setInterval(() => detector.scan(), CONFIG.CHECK_INTERVAL_MS);
   require('http').createServer((req, res) => {
     res.writeHead(200);
-    res.end('Arbitrage Bot is running with Full Uniswap V3 Support!\n');
+    res.end('Arbitrage Bot is running with Robust Uniswap V3 Support!\n');
   }).listen(CONFIG.PORT, () => console.log(`Health check server running on port ${CONFIG.PORT}`));
 }
 
-main().catch(err => { console.error('Fatal error:', err); process.exit(1); });
+if (require.main === module) {
+  main().catch(err => { console.error('Fatal error:', err); process.exit(1); });
+}
+
+module.exports = { ArbitrageDetector };
