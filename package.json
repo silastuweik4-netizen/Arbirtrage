@@ -12,6 +12,7 @@
   "dependencies": {
     "@indexed-finance/multicall": "^2.0.0",
     "axios": "^1.6.7",
+    "decimal.js": "^10.4.3",
     "dotenv": "^16.3.1",
     "ethers": "^5.7.2"
   },
