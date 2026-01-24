@@ -1,4 +1,4 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify");
 
 module.exports = {
   solidity: {
