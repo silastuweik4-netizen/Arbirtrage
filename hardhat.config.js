@@ -1,10 +1,14 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify"); // ✅ Explicitly add the new verify plugin
 
 module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
-      optimizer: { enabled: true, runs: 200 }
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
     }
   },
   networks: {
@@ -15,7 +19,7 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      base: process.env.BASESCAN_API_KEY
+      base: process.env.BASESCAN_API_KEY // ✅ BaseScan API key goes here
     }
   }
 };
