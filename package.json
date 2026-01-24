@@ -17,9 +17,10 @@
   },
   "devDependencies": {
     "hardhat": "^2.17.0",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0"
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "@nomicfoundation/hardhat-verify": "^1.0.0"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0 <21.0.0"
   }
 }
